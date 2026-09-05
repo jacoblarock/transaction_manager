@@ -45,3 +45,29 @@ def insert(conn: PgConnection, table_name: str, rows: list[dict]) -> int:
     with conn.cursor() as cur:
         execute_batch(cur, query, values)
         return cur.rowcount
+
+
+def update(conn: PgConnection, table_name: str, to_update: dict, where: list[dict]) -> int:
+    if not where:
+        return 0
+    set_clause = ", ".join(f"{col} = %s" for col in to_update)
+    where_cols = list(where[0].keys())
+    where_clause = " AND ".join(f"{col} = %s" for col in where_cols)
+    query = f"UPDATE {table_name} SET {set_clause} WHERE {where_clause}"
+    set_values = [to_update[col] for col in to_update]
+    values = [tuple(set_values + [row[col] for col in where_cols]) for row in where]
+    with conn.cursor() as cur:
+        execute_batch(cur, query, values)
+        return cur.rowcount
+
+
+def delete(conn: PgConnection, table_name: str, rows: list[dict]) -> int:
+    if not rows:
+        return 0
+    cols = list(rows[0].keys())
+    where_clause = " AND ".join(f"{col} = %s" for col in cols)
+    query = f"DELETE FROM {table_name} WHERE {where_clause}"
+    values = [tuple(row[col] for col in cols) for row in rows]
+    with conn.cursor() as cur:
+        execute_batch(cur, query, values)
+        return cur.rowcount
