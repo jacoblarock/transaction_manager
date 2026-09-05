@@ -2,7 +2,7 @@ services:
   app:
     image: ${APP_IMAGE}
     ports:
-      - "8000:8000"
+      - "8040:8000"
     environment:
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
