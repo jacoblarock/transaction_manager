@@ -16,7 +16,9 @@ def migrate():
             conn,
             "select m_name from migrations;"
         )]
-        for path in os.listdir("migrations/"):
+        migrations = list(os.listdir("migrations/"))
+        migrations.sort()
+        for path in migrations:
             if (
                 ".sql" not in path 
                 or path == "_migrations.sql"
