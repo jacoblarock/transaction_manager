@@ -1,6 +1,6 @@
 import psycopg2
 from psycopg2.extensions import connection as PgConnection
-from psycopg2.extras import RealDictCursor, RealDictRow, execute_batch
+from psycopg2.extras import RealDictCursor, RealDictRow, execute_batch, execute_values
 import os
 
 
@@ -33,18 +33,21 @@ def select(conn: PgConnection, query: str) -> list[RealDictRow]:
         return cur.fetchall()
 
 
-def insert(conn: PgConnection, table_name: str, rows: list[dict]) -> int:
+def insert(
+    conn: PgConnection, table_name: str, rows: list[dict], primary_key: str
+) -> list[int]:
     if not rows:
-        return 0
+        return []
     cols = list(rows[0].keys())
     query = (
         f"INSERT INTO {table_name} ({', '.join(cols)}) "
-        f"VALUES ({', '.join(['%s'] * len(cols))})"
+        f"VALUES %s "
+        f"RETURNING {primary_key}"
     )
     values = [tuple(row[col] for col in cols) for row in rows]
     with conn.cursor() as cur:
-        execute_batch(cur, query, values)
-        return cur.rowcount
+        result = execute_values(cur, query, values, fetch=True)
+    return [row[primary_key] for row in result]
 
 
 def update(conn: PgConnection, table_name: str, to_update: dict, where: list[dict]) -> int:

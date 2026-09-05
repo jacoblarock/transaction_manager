@@ -120,3 +120,148 @@ def test_create_user_invalid_token(mock_create):
         )
     assert response.status_code == 400
     assert response.data == b"invalid invite token"
+
+
+def test_get_groups_no_token(client):
+    response = client.get("/api/get_groups")
+    assert response.status_code == 400
+    assert response.data == b"no token provided"
+
+
+@mock.patch("app.groups.get_groups")
+def test_get_groups_valid(mock_get_groups):
+    mock_get_groups.return_value = [{"g_id": 1, "g_name": "alpha"}]
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get("/api/get_groups?token=valid")
+    assert response.status_code == 200
+    assert response.json == [{"g_id": 1, "g_name": "alpha"}]
+    mock_get_groups.assert_called_once_with("valid")
+
+
+def test_create_group_missing_params(client):
+    response = client.get("/api/create_group?token=valid")
+    assert response.status_code == 400
+    assert response.data == b"invalid request format"
+
+
+@mock.patch("app.groups.create_group")
+def test_create_group_valid_params(mock_create_group):
+    mock_create_group.return_value = 42
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get("/api/create_group?token=valid&name=newgroup")
+    assert response.status_code == 200
+    assert response.data == b"42"
+    mock_create_group.assert_called_once_with("valid", "newgroup")
+
+
+def test_delete_group_missing_params(client):
+    response = client.get("/api/delete_group?token=valid")
+    assert response.status_code == 400
+    assert response.data == b"invalid request format"
+
+
+def test_delete_group_invalid_id(client):
+    response = client.get("/api/delete_group?token=valid&groupId=abc")
+    assert response.status_code == 400
+    assert response.data == b"invalid group id"
+
+
+@mock.patch("app.groups.delete_group")
+def test_delete_group_valid_params(mock_delete_group):
+    mock_delete_group.return_value = True
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get("/api/delete_group?token=valid&groupId=42")
+    assert response.status_code == 200
+    assert response.data == b"success"
+    mock_delete_group.assert_called_once_with("valid", 42)
+
+
+@mock.patch("app.groups.delete_group")
+def test_delete_group_not_member(mock_delete_group):
+    mock_delete_group.return_value = False
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get("/api/delete_group?token=valid&groupId=42")
+    assert response.status_code == 403
+    assert response.data == b"user not in group"
+
+
+def test_add_user_to_group_missing_params(client):
+    response = client.get("/api/add_user_to_group?token=valid&userId=1")
+    assert response.status_code == 400
+    assert response.data == b"invalid request format"
+
+
+def test_add_user_to_group_invalid_id(client):
+    response = client.get(
+        "/api/add_user_to_group?token=valid&userId=abc&groupId=2"
+    )
+    assert response.status_code == 400
+    assert response.data == b"invalid id"
+
+
+@mock.patch("app.groups.add_user_to_group")
+def test_add_user_to_group_valid_params(mock_add):
+    mock_add.return_value = 10
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get(
+            "/api/add_user_to_group?token=valid&userId=5&groupId=7"
+        )
+    assert response.status_code == 200
+    assert response.data == b"10"
+    mock_add.assert_called_once_with(5, 7)
+
+
+@mock.patch("app.groups.add_user_to_group")
+def test_add_user_to_group_already_member(mock_add):
+    mock_add.return_value = -1
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get(
+            "/api/add_user_to_group?token=valid&userId=5&groupId=7"
+        )
+    assert response.status_code == 400
+    assert response.data == b"user already in group"
+
+
+def test_remove_user_from_group_missing_params(client):
+    response = client.get("/api/remove_user_from_group?userId=5")
+    assert response.status_code == 400
+    assert response.data == b"invalid request format"
+
+
+def test_remove_user_from_group_invalid_id(client):
+    response = client.get(
+        "/api/remove_user_from_group?userId=abc&groupId=2"
+    )
+    assert response.status_code == 400
+    assert response.data == b"invalid id"
+
+
+@mock.patch("app.groups.remove_user_from_group")
+def test_remove_user_from_group_valid_params(mock_remove):
+    mock_remove.return_value = 1
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get(
+            "/api/remove_user_from_group?token=valid&userId=5&groupId=7"
+        )
+    assert response.status_code == 200
+    assert response.data == b"success"
+    mock_remove.assert_called_once_with(5, 7)
+
+
+@mock.patch("app.groups.remove_user_from_group")
+def test_remove_user_from_group_not_member(mock_remove):
+    mock_remove.return_value = -1
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get(
+            "/api/remove_user_from_group?token=valid&userId=5&groupId=7"
+        )
+    assert response.status_code == 400
+    assert response.data == b"user not in group"

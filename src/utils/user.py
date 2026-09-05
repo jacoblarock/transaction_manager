@@ -13,7 +13,8 @@ def create_invite_token() -> str:
             "invite_tokens",
             [{
                 "it_token": it_token
-            }]
+            }],
+            primary_key="it_id",
         )
     logger.info(f"created invite token {it_token}")
     return it_token
@@ -47,6 +48,7 @@ def create_user_with_token(it_token: str, u_name: str, pass_hash: str) -> tuple[
             [{
                 "u_name": u_name,
                 "u_pass": pass_hash,
-            }]
+            }],
+            primary_key="u_id",
         )
         return "success", 200

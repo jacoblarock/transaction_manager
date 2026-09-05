@@ -50,36 +50,38 @@ def test_select_returns_rows():
     cursor.execute.assert_called_once()
 
 
-@mock.patch("utils.db.execute_batch")
-def test_insert_single_row(mock_execute_batch):
-    conn, cursor = _mock_conn(rowcount=1)
+@mock.patch("utils.db.execute_values")
+def test_insert_single_row(mock_execute_values):
+    conn, cursor = _mock_conn()
+    mock_execute_values.return_value = [{"u_id": 1}]
     rows = [{"u_name": "alice", "u_pass": "hash123"}]
-    result = db.insert(conn, "users", rows)
-    assert result == 1
-    mock_execute_batch.assert_called_once()
-    _, kwargs = mock_execute_batch.call_args
-    query = mock_execute_batch.call_args[0][1]
+    result = db.insert(conn, "users", rows, primary_key="u_id")
+    assert result == [1]
+    mock_execute_values.assert_called_once()
+    query = mock_execute_values.call_args[0][1]
     assert "INSERT INTO users" in query
     assert "u_name" in query
     assert "u_pass" in query
+    assert "RETURNING u_id" in query
 
 
-@mock.patch("utils.db.execute_batch")
-def test_insert_multiple_rows(mock_execute_batch):
-    conn, cursor = _mock_conn(rowcount=2)
+@mock.patch("utils.db.execute_values")
+def test_insert_multiple_rows(mock_execute_values):
+    conn, cursor = _mock_conn()
+    mock_execute_values.return_value = [{"u_id": 1}, {"u_id": 2}]
     rows = [
         {"u_name": "alice", "u_pass": "hash1"},
         {"u_name": "bob", "u_pass": "hash2"},
     ]
-    result = db.insert(conn, "users", rows)
-    assert result == 2
-    mock_execute_batch.assert_called_once()
+    result = db.insert(conn, "users", rows, primary_key="u_id")
+    assert result == [1, 2]
+    mock_execute_values.assert_called_once()
 
 
-def test_insert_empty_rows_returns_zero():
+def test_insert_empty_rows_returns_empty_list():
     conn = mock.MagicMock()
-    result = db.insert(conn, "users", [])
-    assert result == 0
+    result = db.insert(conn, "users", [], primary_key="u_id")
+    assert result == []
     conn.cursor.assert_not_called()
 
 

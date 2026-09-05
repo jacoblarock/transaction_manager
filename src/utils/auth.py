@@ -55,7 +55,6 @@ def authenticate(u_name: str, pass_hash: str) -> tuple[str,int]:
             conn,
             f"select u_pass from users where u_id = {u_id};"
         )[0]["u_pass"]
-        logger.info(f"db={u_pass}, arg={pass_hash}")
         if u_pass == pass_hash:
             s_token = gen_session_token()
             db.insert(
@@ -65,6 +64,7 @@ def authenticate(u_name: str, pass_hash: str) -> tuple[str,int]:
                     "s_u_ref": u_id,
                     "s_token": s_token,
                 }],
+                primary_key="s_id",
             )
             return s_token, 200
         else:

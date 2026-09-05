@@ -33,6 +33,7 @@ def migrate():
                     "migrations",
                     [{
                         "m_name": path,
-                    }]
+                    }],
+                    primary_key="m_id",
                 )
                 logger.info(f"completed migration {path}")
