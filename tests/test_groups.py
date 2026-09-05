@@ -17,12 +17,17 @@ def test_get_groups(mock_db, mock_check_auth):
     assert "where ugm_u_ref = 5" in query
 
 
+@mock.patch("utils.groups.check_auth")
 @mock.patch("utils.groups.db")
-def test_add_user_to_group_inserts_when_absent(mock_db):
+def test_add_user_to_group_inserts_when_absent(mock_db, mock_check_auth):
+    mock_check_auth.return_value = 1
     mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
-    mock_db.select.return_value = [{"row_count": 0}]
+    mock_db.select.side_effect = [
+        [{"row_count": 1}],
+        [{"row_count": 0}],
+    ]
     mock_db.insert.return_value = [10]
-    result = groups.add_user_to_group(5, 7)
+    result = groups.add_user_to_group("token", 5, 7)
     assert result == 10
     mock_db.insert.assert_called_once()
     insert_args = mock_db.insert.call_args
@@ -33,21 +38,42 @@ def test_add_user_to_group_inserts_when_absent(mock_db):
     assert insert_args[1]["primary_key"] == "ugm_id"
 
 
+@mock.patch("utils.groups.check_auth")
 @mock.patch("utils.groups.db")
-def test_add_user_to_group_returns_minus_one_when_present(mock_db):
+def test_add_user_to_group_caller_not_in_group(mock_db, mock_check_auth):
+    mock_check_auth.return_value = 1
     mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
-    mock_db.select.return_value = [{"row_count": 1}]
-    result = groups.add_user_to_group(5, 7)
+    mock_db.select.return_value = [{"row_count": 0}]
+    result = groups.add_user_to_group("token", 5, 7)
     assert result == -1
     mock_db.insert.assert_not_called()
 
 
+@mock.patch("utils.groups.check_auth")
 @mock.patch("utils.groups.db")
-def test_remove_user_from_group_deletes_when_present(mock_db):
+def test_add_user_to_group_target_already_in_group(mock_db, mock_check_auth):
+    mock_check_auth.return_value = 1
     mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
-    mock_db.select.return_value = [{"row_count": 1}]
+    mock_db.select.side_effect = [
+        [{"row_count": 1}],
+        [{"row_count": 1}],
+    ]
+    result = groups.add_user_to_group("token", 5, 7)
+    assert result == -2
+    mock_db.insert.assert_not_called()
+
+
+@mock.patch("utils.groups.check_auth")
+@mock.patch("utils.groups.db")
+def test_remove_user_from_group_deletes_when_present(mock_db, mock_check_auth):
+    mock_check_auth.return_value = 1
+    mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
+    mock_db.select.side_effect = [
+        [{"row_count": 1}],
+        [{"row_count": 1}],
+    ]
     mock_db.delete.return_value = 1
-    result = groups.remove_user_from_group(5, 7)
+    result = groups.remove_user_from_group("token", 5, 7)
     assert result == 1
     mock_db.delete.assert_called_once()
     delete_args = mock_db.delete.call_args
@@ -57,31 +83,49 @@ def test_remove_user_from_group_deletes_when_present(mock_db):
     assert deleted_row["ugm_g_ref"] == 7
 
 
+@mock.patch("utils.groups.check_auth")
 @mock.patch("utils.groups.db")
-def test_remove_user_from_group_returns_minus_one_when_absent(mock_db):
+def test_remove_user_from_group_caller_not_in_group(mock_db, mock_check_auth):
+    mock_check_auth.return_value = 1
     mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
     mock_db.select.return_value = [{"row_count": 0}]
-    result = groups.remove_user_from_group(5, 7)
+    result = groups.remove_user_from_group("token", 5, 7)
     assert result == -1
     mock_db.delete.assert_not_called()
 
 
-@mock.patch("utils.groups.add_user_to_group")
 @mock.patch("utils.groups.check_auth")
 @mock.patch("utils.groups.db")
-def test_create_group(mock_db, mock_check_auth, mock_add_user):
+def test_remove_user_from_group_target_not_in_group(mock_db, mock_check_auth):
+    mock_check_auth.return_value = 1
+    mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
+    mock_db.select.side_effect = [
+        [{"row_count": 1}],
+        [{"row_count": 0}],
+    ]
+    result = groups.remove_user_from_group("token", 5, 7)
+    assert result == -2
+    mock_db.delete.assert_not_called()
+
+
+@mock.patch("utils.groups.check_auth")
+@mock.patch("utils.groups.db")
+def test_create_group(mock_db, mock_check_auth):
     mock_check_auth.return_value = 3
     mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
     mock_db.insert.return_value = [42]
     result = groups.create_group("token", "newgroup")
     assert result == 42
-    mock_db.insert.assert_called_once()
-    insert_args = mock_db.insert.call_args
-    assert insert_args[0][1] == "groups"
-    inserted_row = insert_args[0][2][0]
-    assert inserted_row["g_name"] == "newgroup"
-    assert insert_args[1]["primary_key"] == "g_id"
-    mock_add_user.assert_called_once_with(3, 42)
+    assert mock_db.insert.call_count == 2
+    group_insert = mock_db.insert.call_args_list[0]
+    assert group_insert[0][1] == "groups"
+    assert group_insert[0][2][0]["g_name"] == "newgroup"
+    assert group_insert[1]["primary_key"] == "g_id"
+    map_insert = mock_db.insert.call_args_list[1]
+    assert map_insert[0][1] == "user_group_map"
+    assert map_insert[0][2][0]["ugm_u_ref"] == 3
+    assert map_insert[0][2][0]["ugm_g_ref"] == 42
+    assert map_insert[1]["primary_key"] == "ugm_id"
 
 
 @mock.patch("utils.groups.check_auth")

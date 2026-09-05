@@ -15,20 +15,27 @@ def get_groups(s_token: str) -> list[db.RealDictRow]:
         )
 
 
-def add_user_to_group(u_id: int, g_id: int) -> int:
-    logger.info(f"add user {u_id} to group {g_id}")
+def add_user_to_group(s_token: str, target_u_id: int, g_id: int) -> int:
+    u_id = check_auth(s_token)
+    logger.info(f"add user {target_u_id} to group {g_id} by user {u_id}")
     with db.connect() as conn:
-        existing_row_count = db.select(
+        caller_row_count = db.select(
             conn,
             f"select count(*) as row_count from user_group_map where ugm_u_ref = {u_id} and ugm_g_ref = {g_id};"
         )[0]["row_count"]
-        if existing_row_count > 0:
+        if caller_row_count == 0:
             return -1
+        existing_row_count = db.select(
+            conn,
+            f"select count(*) as row_count from user_group_map where ugm_u_ref = {target_u_id} and ugm_g_ref = {g_id};"
+        )[0]["row_count"]
+        if existing_row_count > 0:
+            return -2
         ugm_id = db.insert(
             conn,
             "user_group_map",
             [{
-                "ugm_u_ref": u_id,
+                "ugm_u_ref": target_u_id,
                 "ugm_g_ref": g_id,
             }],
             primary_key="ugm_id"
@@ -36,20 +43,27 @@ def add_user_to_group(u_id: int, g_id: int) -> int:
         return ugm_id
         
 
-def remove_user_from_group(u_id: int, g_id: int) -> int:
-    logger.info(f"remove user {u_id} from group {g_id}")
+def remove_user_from_group(s_token: str, target_u_id: int, g_id: int) -> int:
+    u_id = check_auth(s_token)
+    logger.info(f"remove user {target_u_id} from group {g_id} by user {u_id}")
     with db.connect() as conn:
-        existing_row_count = db.select(
+        caller_row_count = db.select(
             conn,
             f"select count(*) as row_count from user_group_map where ugm_u_ref = {u_id} and ugm_g_ref = {g_id};"
         )[0]["row_count"]
-        if existing_row_count == 0:
+        if caller_row_count == 0:
             return -1
+        existing_row_count = db.select(
+            conn,
+            f"select count(*) as row_count from user_group_map where ugm_u_ref = {target_u_id} and ugm_g_ref = {g_id};"
+        )[0]["row_count"]
+        if existing_row_count == 0:
+            return -2
         return db.delete(
             conn,
             "user_group_map",
             [{
-                "ugm_u_ref": u_id,
+                "ugm_u_ref": target_u_id,
                 "ugm_g_ref": g_id,
             }],
         )
@@ -67,7 +81,15 @@ def create_group(s_token: str, g_name: str) -> int:
             }],
             primary_key="g_id",
         )[0]
-        add_user_to_group(u_id, g_id)
+        db.insert(
+            conn,
+            "user_group_map",
+            [{
+                "ugm_u_ref": u_id,
+                "ugm_g_ref": g_id,
+            }],
+            primary_key="ugm_id",
+        )
         return g_id
 
 

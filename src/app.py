@@ -78,6 +78,10 @@ def delete_group() -> tuple[str, int]:
 @app.route("/api/add_user_to_group", methods=["GET"])
 def add_user_to_group() -> tuple[str, int]:
     s_token = request.args.get("token")
+    if not s_token:
+        return "invalid request format", 400
+    if auth.check_auth(s_token) < 0:
+        return "invalid token", 400
     u_id = request.args.get("userId")
     g_id = request.args.get("groupId")
     if type(s_token) == str and type(u_id) == str and type(g_id) == str:
@@ -86,8 +90,10 @@ def add_user_to_group() -> tuple[str, int]:
             g_id_int = int(g_id)
         except ValueError:
             return "invalid id", 400
-        result = groups.add_user_to_group(u_id_int, g_id_int)
+        result = groups.add_user_to_group(s_token, u_id_int, g_id_int)
         if result == -1:
+            return "calling user not in group", 403
+        if result == -2:
             return "user already in group", 400
         return str(result), 200
     return "invalid request format", 400
@@ -96,6 +102,10 @@ def add_user_to_group() -> tuple[str, int]:
 @app.route("/api/remove_user_from_group", methods=["GET"])
 def remove_user_from_group() -> tuple[str, int]:
     s_token = request.args.get("token")
+    if not s_token:
+        return "invalid request format", 400
+    if auth.check_auth(s_token) < 0:
+        return "invalid token", 400
     u_id = request.args.get("userId")
     g_id = request.args.get("groupId")
     if type(u_id) == str and type(g_id) == str:
@@ -104,8 +114,10 @@ def remove_user_from_group() -> tuple[str, int]:
             g_id_int = int(g_id)
         except ValueError:
             return "invalid id", 400
-        result = groups.remove_user_from_group(u_id_int, g_id_int)
+        result = groups.remove_user_from_group(s_token, u_id_int, g_id_int)
         if result == -1:
+            return "calling user not in group", 403
+        if result == -2:
             return "user not in group", 400
         return "success", 200
     return "invalid request format", 400
