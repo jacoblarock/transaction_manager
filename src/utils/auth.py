@@ -25,6 +25,22 @@ def check_auth(s_token: str) -> int:
         return -1
 
 
+def check_invite_token(it_token: str) -> int:
+    with db.connect() as conn:
+        it_id_rows = db.select(
+            conn,
+            f"select it_id from invite_tokens where it_token = '{it_token}' and it_expires > '{datetime.now()}';"
+        )
+        if len(it_id_rows) != 1:
+            logger.error("no invite token found")
+            return -1
+        it_id = it_id_rows[0].get("it_id")
+        if it_id:
+            logger.info("invite token found")
+            return it_id
+        return -1
+
+
 def authenticate(u_name: str, pass_hash: str) -> tuple[str,int]:
     with db.connect() as conn:
         u_id_rows = db.select(
