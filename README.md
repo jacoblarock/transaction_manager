@@ -110,6 +110,28 @@ GET /api/get_groups?token=<session_token>
 | 200 | JSON array of `[{"g_id": int, "g_name": string}, ...]` |
 | 400 | `no token provided` |
 
+#### Get Group Users
+
+Returns the users (IDs and names) in a group. The caller must be a member.
+
+```
+GET /api/get_group_users?token=<session_token>&groupId=<group_id>
+```
+
+| Parameter | Type | Required |
+|-----------|------|----------|
+| `token` | string | yes |
+| `groupId` | int | yes |
+
+**Responses**
+
+| Status | Body |
+|--------|------|
+| 200 | JSON array of `[{"u_id": int, "u_name": string}, ...]` |
+| 400 | `invalid id` / `invalid request format` |
+
+Returns `[]` if the caller is not a member of the group.
+
 #### Create Group
 
 Creates a new group and adds the authenticated user to it.

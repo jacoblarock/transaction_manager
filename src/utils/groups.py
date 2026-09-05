@@ -114,3 +114,21 @@ def delete_group(s_token: str, g_id: int) -> bool:
             [{"g_id": g_id}],
         )
         return True
+
+
+def get_group_users(s_token: str, g_id: int) -> list[db.RealDictRow]:
+    u_id = check_auth(s_token)
+    logger.info(f"get group users user={u_id} group={g_id}")
+    with db.connect() as conn:
+        membership_count = db.select(
+            conn,
+            f"select count(*) as row_count from user_group_map where ugm_u_ref = {u_id} and ugm_g_ref = {g_id};"
+        )[0]["row_count"]
+        if membership_count == 0:
+            return []
+        return db.select(
+            conn,
+            "select u_id, u_name "
+            "from users join user_group_map on ugm_u_ref = u_id "
+            f"where ugm_g_ref = {g_id};"
+        )

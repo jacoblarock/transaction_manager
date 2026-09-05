@@ -64,6 +64,20 @@ def get_groups() -> tuple[list | str, int]:
     return rows, 200
 
 
+@app.route("/api/get_group_users", methods=["GET"])
+def get_group_users() -> tuple[list | str, int]:
+    s_token = request.args.get("token")
+    g_id = request.args.get("groupId")
+    if type(s_token) == str and type(g_id) == str:
+        try:
+            g_id_int = int(g_id)
+        except ValueError:
+            return "invalid id", 400
+        rows = groups.get_group_users(s_token, g_id_int)
+        return rows, 200
+    return "invalid request format", 400
+
+
 @app.route("/api/create_group", methods=["GET"])
 def create_group() -> tuple[str, int]:
     s_token = request.args.get("token")

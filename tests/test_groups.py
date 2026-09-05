@@ -154,3 +154,28 @@ def test_delete_group_not_member(mock_db, mock_check_auth):
     result = groups.delete_group("token", 42)
     assert result is False
     mock_db.delete.assert_not_called()
+
+
+@mock.patch("utils.groups.check_auth")
+@mock.patch("utils.groups.db")
+def test_get_group_users(mock_db, mock_check_auth):
+    mock_check_auth.return_value = 5
+    mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
+    mock_db.select.side_effect = [
+        [{"row_count": 1}],
+        [{"u_id": 1, "u_name": "alice"}, {"u_id": 2, "u_name": "bob"}],
+    ]
+    result = groups.get_group_users("token", 7)
+    assert result == [{"u_id": 1, "u_name": "alice"}, {"u_id": 2, "u_name": "bob"}]
+    assert mock_db.select.call_count == 2
+
+
+@mock.patch("utils.groups.check_auth")
+@mock.patch("utils.groups.db")
+def test_get_group_users_not_member(mock_db, mock_check_auth):
+    mock_check_auth.return_value = 5
+    mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
+    mock_db.select.return_value = [{"row_count": 0}]
+    result = groups.get_group_users("token", 7)
+    assert result == []
+    assert mock_db.select.call_count == 1

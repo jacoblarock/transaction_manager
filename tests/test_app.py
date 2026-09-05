@@ -582,3 +582,25 @@ def test_settle_valid(mock_settle):
 def test_settle_invalid_id(client):
     response = client.get("/api/settle?token=valid&groupId=abc")
     assert response.status_code == 400
+
+
+# --- get group users endpoint ---
+
+def test_get_group_users_missing_params(client):
+    response = client.get("/api/get_group_users?token=valid")
+    assert response.status_code == 400
+
+
+@mock.patch("app.groups.get_group_users")
+def test_get_group_users_valid(mock_get_users):
+    mock_get_users.return_value = [{"u_id": 1, "u_name": "alice"}]
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get("/api/get_group_users?token=valid&groupId=7")
+    assert response.status_code == 200
+    mock_get_users.assert_called_once_with("valid", 7)
+
+
+def test_get_group_users_invalid_id(client):
+    response = client.get("/api/get_group_users?token=valid&groupId=abc")
+    assert response.status_code == 400
