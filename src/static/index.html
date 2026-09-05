@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Manager</title>
+</head>
+<body>
+    <script src="/static/js/common.js"></script>
+    <script>
+        (async () => {
+            if (getToken()) {
+                try {
+                    const resp = await fetch(`/api/auth_check?token=${encodeURIComponent(getToken())}`);
+                    if (resp.ok) {
+                        window.location.href = "/static/groups.html";
+                        return;
+                    }
+                } catch {}
+                clearToken();
+                clearUsername();
+            }
+            window.location.href = "/static/login.html";
+        })();
+    </script>
+</body>
+</html>

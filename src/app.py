@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, send_from_directory
 from migrations.migrate import migrate
 from utils import auth
 from utils import user
@@ -6,9 +6,15 @@ from utils import groups
 from utils import transactions
 from utils import payments
 from utils import settlement
+import os
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"), static_url_path="/static")
 
+
+
+@app.route("/")
+def index():
+    return send_from_directory(app.static_folder, "index.html")
 
 
 @app.route("/api/")
