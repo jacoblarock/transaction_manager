@@ -98,6 +98,30 @@ def test_create_invite_token_valid(mock_check_auth, mock_create):
     mock_create.assert_called_once()
 
 
+def test_get_user_id_missing_params(client):
+    response = client.get("/api/get_user_id?token=valid")
+    assert response.status_code == 400
+
+
+@mock.patch("app.user.get_user_id")
+def test_get_user_id_found(mock_get_user_id):
+    mock_get_user_id.return_value = 7
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get("/api/get_user_id?token=valid&user=alice")
+    assert response.status_code == 200
+    mock_get_user_id.assert_called_once_with("valid", "alice")
+
+
+@mock.patch("app.user.get_user_id")
+def test_get_user_id_not_found(mock_get_user_id):
+    mock_get_user_id.return_value = -1
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get("/api/get_user_id?token=valid&user=nobody")
+    assert response.status_code == 400
+
+
 def test_create_user_missing_params(client):
     response = client.get("/api/create_user_from_invite_token")
     assert response.status_code == 400

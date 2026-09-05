@@ -89,6 +89,26 @@ GET /api/create_user_from_invite_token?token=<invite_token>&user=<username>&pass
 | 200 | `success` |
 | 400 | `invalid invite token` / `user with username already exists` / `invalid request format` |
 
+#### Get User ID
+
+Returns the user ID for a given username. Requires an authenticated session.
+
+```
+GET /api/get_user_id?token=<session_token>&user=<username>
+```
+
+| Parameter | Type | Required |
+|-----------|------|----------|
+| `token` | string | yes |
+| `user` | string | yes |
+
+**Responses**
+
+| Status | Body |
+|--------|------|
+| 200 | User ID (int) |
+| 400 | `user not found` / `invalid request format` |
+
 ### Groups
 
 #### Get Groups

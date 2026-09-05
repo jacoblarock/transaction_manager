@@ -51,6 +51,18 @@ def create_invite_token() -> tuple[str, int]:
     return user.create_invite_token(), 200
 
 
+@app.route("/api/get_user_id", methods=["GET"])
+def get_user_id() -> tuple[str, int]:
+    s_token = request.args.get("token")
+    u_name = request.args.get("user")
+    if type(s_token) == str and type(u_name) == str:
+        result = user.get_user_id(s_token, u_name)
+        if result < 0:
+            return "user not found", 400
+        return str(result), 200
+    return "invalid request format", 400
+
+
 @app.route("/api/create_user_from_invite_token", methods=["GET"])
 def create_user_from_invite_token() -> tuple[str,int]:
     it_token = request.args.get("token")

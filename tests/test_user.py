@@ -63,3 +63,30 @@ def test_create_user_with_token_no_collision(mock_db, mock_check_invite):
     update_args = mock_db.update.call_args
     assert update_args[0][1] == "invite_tokens"
     assert "it_expires" in update_args[0][2]
+
+
+@mock.patch("utils.user.check_auth")
+@mock.patch("utils.user.db")
+def test_get_user_id_found(mock_db, mock_check_auth):
+    mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
+    mock_db.select.return_value = [{"u_id": 7}]
+    result = user.get_user_id("token", "alice")
+    assert result == 7
+
+
+@mock.patch("utils.user.check_auth")
+@mock.patch("utils.user.db")
+def test_get_user_id_not_found(mock_db, mock_check_auth):
+    mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
+    mock_db.select.return_value = []
+    result = user.get_user_id("token", "nobody")
+    assert result == -1
+
+
+@mock.patch("utils.user.check_auth")
+@mock.patch("utils.user.db")
+def test_get_user_id_multiple(mock_db, mock_check_auth):
+    mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
+    mock_db.select.return_value = [{"u_id": 1}, {"u_id": 2}]
+    result = user.get_user_id("token", "dup")
+    assert result == -1

@@ -1,5 +1,5 @@
 from utils import db
-from utils.auth import check_invite_token, gen_session_token
+from utils.auth import check_invite_token, check_auth, gen_session_token
 from utils.logs import logger
 from datetime import datetime
 
@@ -52,3 +52,16 @@ def create_user_with_token(it_token: str, u_name: str, pass_hash: str) -> tuple[
             primary_key="u_id",
         )
         return "success", 200
+
+
+def get_user_id(s_token: str, u_name: str) -> int:
+    check_auth(s_token)
+    logger.info(f"get user id name={u_name}")
+    with db.connect() as conn:
+        rows = db.select(
+            conn,
+            f"select u_id from users where u_name = '{u_name}';"
+        )
+        if len(rows) != 1:
+            return -1
+        return rows[0]["u_id"]
