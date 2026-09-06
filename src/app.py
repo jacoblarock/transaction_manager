@@ -174,13 +174,14 @@ def create_transaction() -> tuple[str, int]:
     g_id = request.args.get("groupId")
     t_name = request.args.get("name")
     t_amount = request.args.get("amount")
+    t_date = request.args.get("date")
     if type(s_token) == str and type(g_id) == str and type(t_name) == str and type(t_amount) == str:
         try:
             g_id_int = int(g_id)
             t_amount_float = float(t_amount)
         except ValueError:
             return "invalid id", 400
-        result = transactions.create_transaction(s_token, g_id_int, t_name, t_amount_float)
+        result = transactions.create_transaction(s_token, g_id_int, t_name, t_amount_float, t_date)
         if result == -1:
             return "user not in group", 403
         return str(result), 200
@@ -208,13 +209,14 @@ def update_transaction() -> tuple[str, int]:
     t_id = request.args.get("transactionId")
     t_name = request.args.get("name")
     t_amount = request.args.get("amount")
+    t_date = request.args.get("date")
     if type(s_token) == str and type(t_id) == str and type(t_name) == str and type(t_amount) == str:
         try:
             t_id_int = int(t_id)
             t_amount_float = float(t_amount)
         except ValueError:
             return "invalid id", 400
-        if not transactions.update_transaction(s_token, t_id_int, t_name, t_amount_float):
+        if not transactions.update_transaction(s_token, t_id_int, t_name, t_amount_float, t_date):
             return "user not in group", 403
         return "success", 200
     return "invalid request format", 400
@@ -240,6 +242,7 @@ def create_payment() -> tuple[str, int]:
     g_id = request.args.get("groupId")
     recipient_u_id = request.args.get("recipientId")
     p_amount = request.args.get("amount")
+    p_date = request.args.get("date")
     if type(s_token) == str and type(g_id) == str and type(recipient_u_id) == str and type(p_amount) == str:
         try:
             g_id_int = int(g_id)
@@ -247,7 +250,7 @@ def create_payment() -> tuple[str, int]:
             p_amount_float = float(p_amount)
         except ValueError:
             return "invalid id", 400
-        result = payments.create_payment(s_token, g_id_int, recipient_u_id_int, p_amount_float)
+        result = payments.create_payment(s_token, g_id_int, recipient_u_id_int, p_amount_float, p_date)
         if result == -1:
             return "user not in group", 403
         return str(result), 200
@@ -274,13 +277,14 @@ def update_payment() -> tuple[str, int]:
     s_token = request.args.get("token")
     p_id = request.args.get("paymentId")
     p_amount = request.args.get("amount")
+    p_date = request.args.get("date")
     if type(s_token) == str and type(p_id) == str and type(p_amount) == str:
         try:
             p_id_int = int(p_id)
             p_amount_float = float(p_amount)
         except ValueError:
             return "invalid id", 400
-        if not payments.update_payment(s_token, p_id_int, p_amount_float):
+        if not payments.update_payment(s_token, p_id_int, p_amount_float, p_date):
             return "user not in group", 403
         return "success", 200
     return "invalid request format", 400

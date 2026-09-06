@@ -86,7 +86,14 @@ function formatAmount(amount) {
 
 // Format date
 function formatDate(dateStr) {
-    return new Date(dateStr).toLocaleString();
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleDateString();
+}
+
+function toISODate(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    return d.toISOString().split("T")[0];
 }
 
 // Escape HTML

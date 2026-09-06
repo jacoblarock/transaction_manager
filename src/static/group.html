@@ -51,6 +51,10 @@
                         <label class="form-label">Amount</label>
                         <input type="number" step="0.01" class="form-control" id="txnAmount">
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date (optional)</label>
+                        <input type="date" class="form-control" id="txnDate">
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -77,6 +81,10 @@
                     <div class="mb-3">
                         <label class="form-label">Amount</label>
                         <input type="number" step="0.01" class="form-control" id="payAmount">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date (optional)</label>
+                        <input type="date" class="form-control" id="payDate">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -105,6 +113,10 @@
                         <label class="form-label">Amount</label>
                         <input type="number" step="0.01" class="form-control" id="editTxnAmount">
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date (optional)</label>
+                        <input type="date" class="form-control" id="editTxnDate">
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-danger me-auto" id="deleteTxnBtn">Delete</button>
@@ -128,6 +140,10 @@
                     <div class="mb-3">
                         <label class="form-label">Amount</label>
                         <input type="number" step="0.01" class="form-control" id="editPayAmount">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date (optional)</label>
+                        <input type="date" class="form-control" id="editPayDate">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -189,7 +205,8 @@
                     user: t.t_u_ref,
                     name: t.t_name,
                     amount: t.t_amount,
-                    date: t.t_created_at,
+                    date: t.t_date,
+                    created_at: t.t_created_at,
                 }));
                 pays.forEach(p => items.push({
                     type: "payment",
@@ -197,9 +214,14 @@
                     sender: p.p_u_sender,
                     recipient: p.p_u_recipient,
                     amount: p.p_amount,
-                    date: p.p_created_at,
+                    date: p.p_date,
+                    created_at: p.p_created_at,
                 }));
-                items.sort((a, b) => new Date(b.date) - new Date(a.date));
+                items.sort((a, b) => {
+                    const d = new Date(b.date) - new Date(a.date);
+                    if (d !== 0) return d;
+                    return new Date(b.created_at) - new Date(a.created_at);
+                });
 
                 const container = document.getElementById("timeline");
                 if (items.length === 0) {
@@ -210,7 +232,7 @@
                     if (item.type === "transaction") {
                         const isMine = currentUserId !== null && item.user == currentUserId;
                         const editBtn = isMine
-                            ? `<button class="btn btn-outline-secondary btn-sm ms-2" onclick="openEditTransaction(${item.id}, '${escapeHtml(item.name)}', ${item.amount})">Edit</button>`
+                            ? `<button class="btn btn-outline-secondary btn-sm ms-2" onclick="openEditTransaction(${item.id}, '${escapeHtml(item.name)}', ${item.amount}, '${item.date}')">Edit</button>`
                             : "";
                         return `<div class="list-group-item d-flex justify-content-between align-items-center">
                             <div>
@@ -226,7 +248,7 @@
                     } else {
                         const isMine = currentUserId !== null && item.sender == currentUserId;
                         const editBtn = isMine
-                            ? `<button class="btn btn-outline-secondary btn-sm ms-2" onclick="openEditPayment(${item.id}, ${item.amount})">Edit</button>`
+                            ? `<button class="btn btn-outline-secondary btn-sm ms-2" onclick="openEditPayment(${item.id}, ${item.amount}, '${item.date}')">Edit</button>`
                             : "";
                         return `<div class="list-group-item d-flex justify-content-between align-items-center">
                             <div>
@@ -249,6 +271,7 @@
         document.getElementById("addTxnBtn").addEventListener("click", () => {
             document.getElementById("txnName").value = "";
             document.getElementById("txnAmount").value = "";
+            document.getElementById("txnDate").value = "";
             document.getElementById("addTxnAlert").innerHTML = "";
             new bootstrap.Modal(document.getElementById("addTxnModal")).show();
         });
@@ -256,11 +279,14 @@
         document.getElementById("saveTxnBtn").addEventListener("click", async () => {
             const name = document.getElementById("txnName").value.trim();
             const amount = document.getElementById("txnAmount").value;
+            const date = document.getElementById("txnDate").value;
             const alertBox = document.getElementById("addTxnAlert");
             alertBox.innerHTML = "";
             if (!name || !amount) { alertBox.innerHTML = `<div class="alert alert-danger">All fields required.</div>`; return; }
             try {
-                const resp = await fetch(`/api/create_transaction?token=${encodeURIComponent(getToken())}&groupId=${groupId}&name=${encodeURIComponent(name)}&amount=${amount}`);
+                let url = `/api/create_transaction?token=${encodeURIComponent(getToken())}&groupId=${groupId}&name=${encodeURIComponent(name)}&amount=${amount}`;
+                if (date) url += `&date=${date}`;
+                const resp = await fetch(url);
                 const text = await resp.text();
                 if (resp.ok) {
                     bootstrap.Modal.getInstance(document.getElementById("addTxnModal")).hide();
@@ -275,6 +301,7 @@
 
         document.getElementById("addPayBtn").addEventListener("click", async () => {
             document.getElementById("payAmount").value = "";
+            document.getElementById("payDate").value = "";
             document.getElementById("addPayAlert").innerHTML = "";
             await loadUsers();
             const sel = document.getElementById("payRecipient");
@@ -289,7 +316,10 @@
             alertBox.innerHTML = "";
             if (!amount) { alertBox.innerHTML = `<div class="alert alert-danger">Amount required.</div>`; return; }
             try {
-                const resp = await fetch(`/api/create_payment?token=${encodeURIComponent(getToken())}&groupId=${groupId}&recipientId=${recipientId}&amount=${amount}`);
+                let url = `/api/create_payment?token=${encodeURIComponent(getToken())}&groupId=${groupId}&recipientId=${recipientId}&amount=${amount}`;
+                const date = document.getElementById("payDate").value;
+                if (date) url += `&date=${date}`;
+                const resp = await fetch(url);
                 const text = await resp.text();
                 if (resp.ok) {
                     bootstrap.Modal.getInstance(document.getElementById("addPayModal")).hide();
@@ -302,10 +332,11 @@
             }
         });
 
-        window.openEditTransaction = function(txnId, name, amount) {
+        window.openEditTransaction = function(txnId, name, amount, date) {
             currentEditTxnId = txnId;
             document.getElementById("editTxnName").value = name;
             document.getElementById("editTxnAmount").value = amount;
+            document.getElementById("editTxnDate").value = toISODate(date);
             document.getElementById("editTxnAlert").innerHTML = "";
             new bootstrap.Modal(document.getElementById("editTxnModal")).show();
         };
@@ -313,11 +344,14 @@
         document.getElementById("updateTxnBtn").addEventListener("click", async () => {
             const name = document.getElementById("editTxnName").value.trim();
             const amount = document.getElementById("editTxnAmount").value;
+            const date = document.getElementById("editTxnDate").value;
             const alertBox = document.getElementById("editTxnAlert");
             alertBox.innerHTML = "";
             if (!name || !amount) { alertBox.innerHTML = `<div class="alert alert-danger">All fields required.</div>`; return; }
             try {
-                const resp = await fetch(`/api/update_transaction?token=${encodeURIComponent(getToken())}&transactionId=${currentEditTxnId}&name=${encodeURIComponent(name)}&amount=${amount}`);
+                let url = `/api/update_transaction?token=${encodeURIComponent(getToken())}&transactionId=${currentEditTxnId}&name=${encodeURIComponent(name)}&amount=${amount}`;
+                if (date) url += `&date=${date}`;
+                const resp = await fetch(url);
                 const text = await resp.text();
                 if (resp.ok) {
                     bootstrap.Modal.getInstance(document.getElementById("editTxnModal")).hide();
@@ -347,20 +381,24 @@
             }
         });
 
-        window.openEditPayment = function(payId, amount) {
+        window.openEditPayment = function(payId, amount, date) {
             currentEditPayId = payId;
             document.getElementById("editPayAmount").value = amount;
+            document.getElementById("editPayDate").value = toISODate(date);
             document.getElementById("editPayAlert").innerHTML = "";
             new bootstrap.Modal(document.getElementById("editPayModal")).show();
         };
 
         document.getElementById("updatePayBtn").addEventListener("click", async () => {
             const amount = document.getElementById("editPayAmount").value;
+            const date = document.getElementById("editPayDate").value;
             const alertBox = document.getElementById("editPayAlert");
             alertBox.innerHTML = "";
             if (!amount) { alertBox.innerHTML = `<div class="alert alert-danger">Amount required.</div>`; return; }
             try {
-                const resp = await fetch(`/api/update_payment?token=${encodeURIComponent(getToken())}&paymentId=${currentEditPayId}&amount=${amount}`);
+                let url = `/api/update_payment?token=${encodeURIComponent(getToken())}&paymentId=${currentEditPayId}&amount=${amount}`;
+                if (date) url += `&date=${date}`;
+                const resp = await fetch(url);
                 const text = await resp.text();
                 if (resp.ok) {
                     bootstrap.Modal.getInstance(document.getElementById("editPayModal")).hide();

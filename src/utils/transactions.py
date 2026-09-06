@@ -8,9 +8,10 @@ def create_transaction(
     g_id: int,
     t_name: str,
     t_amount: float,
+    t_date: str | None = None,
 ) -> int:
     u_id = check_auth(s_token)
-    logger.info(f"create transaction user={u_id} group={g_id} name={t_name} amount={t_amount}")
+    logger.info(f"create transaction user={u_id} group={g_id} name={t_name} amount={t_amount} date={t_date}")
     with db.connect() as conn:
         membership_count = db.select(
             conn,
@@ -18,15 +19,18 @@ def create_transaction(
         )[0]["row_count"]
         if membership_count == 0:
             return -1
+        row = {
+            "t_u_ref": u_id,
+            "t_name": t_name,
+            "t_g_ref": g_id,
+            "t_amount": t_amount,
+        }
+        if t_date is not None:
+            row["t_date"] = t_date
         t_id = db.insert(
             conn,
             "transactions",
-            [{
-                "t_u_ref": u_id,
-                "t_name": t_name,
-                "t_g_ref": g_id,
-                "t_amount": t_amount,
-            }],
+            [row],
             primary_key="t_id",
         )[0]
         return t_id
@@ -65,9 +69,10 @@ def update_transaction(
     t_id: int,
     t_name: str,
     t_amount: float,
+    t_date: str | None = None,
 ) -> bool:
     u_id = check_auth(s_token)
-    logger.info(f"update transaction user={u_id} transaction={t_id} name={t_name} amount={t_amount}")
+    logger.info(f"update transaction user={u_id} transaction={t_id} name={t_name} amount={t_amount} date={t_date}")
     with db.connect() as conn:
         transaction_rows = db.select(
             conn,
@@ -82,10 +87,13 @@ def update_transaction(
         )[0]["row_count"]
         if membership_count == 0:
             return False
+        to_update = {"t_name": t_name, "t_amount": t_amount}
+        if t_date is not None:
+            to_update["t_date"] = t_date
         db.update(
             conn,
             "transactions",
-            {"t_name": t_name, "t_amount": t_amount},
+            to_update,
             [{"t_id": t_id}],
         )
         return True
@@ -106,6 +114,6 @@ def get_transactions(
             return []
         return db.select(
             conn,
-            "select t_id, t_u_ref, t_name, t_g_ref, t_amount, t_created_at "
+            "select t_id, t_u_ref, t_name, t_g_ref, t_amount, t_date, t_created_at "
             f"from transactions where t_g_ref = {g_id};"
         )

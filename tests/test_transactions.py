@@ -20,6 +20,22 @@ def test_create_transaction(mock_db, mock_check_auth):
     assert inserted_row["t_name"] == "lunch"
     assert inserted_row["t_g_ref"] == 7
     assert inserted_row["t_amount"] == 12.50
+    assert "t_date" not in inserted_row
+    assert insert_args[1]["primary_key"] == "t_id"
+
+
+@mock.patch("utils.transactions.check_auth")
+@mock.patch("utils.transactions.db")
+def test_create_transaction_with_date(mock_db, mock_check_auth):
+    mock_check_auth.return_value = 5
+    mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
+    mock_db.select.return_value = [{"row_count": 1}]
+    mock_db.insert.return_value = [42]
+    result = transactions.create_transaction("token", 7, "lunch", 12.50, "2026-09-01")
+    assert result == 42
+    insert_args = mock_db.insert.call_args
+    inserted_row = insert_args[0][2][0]
+    assert inserted_row["t_date"] == "2026-09-01"
     assert insert_args[1]["primary_key"] == "t_id"
 
 

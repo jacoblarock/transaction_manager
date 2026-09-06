@@ -360,7 +360,7 @@ def test_create_transaction_valid(mock_create):
             "/api/create_transaction?token=valid&groupId=7&name=lunch&amount=12.50"
         )
     assert response.status_code == 200
-    mock_create.assert_called_once_with("valid", 7, "lunch", 12.50)
+    mock_create.assert_called_once_with("valid", 7, "lunch", 12.50, None)
 
 
 @mock.patch("app.transactions.create_transaction")
@@ -424,7 +424,7 @@ def test_update_transaction_valid(mock_update):
             "/api/update_transaction?token=valid&transactionId=42&name=dinner&amount=25.00"
         )
     assert response.status_code == 200
-    mock_update.assert_called_once_with("valid", 42, "dinner", 25.00)
+    mock_update.assert_called_once_with("valid", 42, "dinner", 25.00, None)
 
 
 @mock.patch("app.transactions.update_transaction")
@@ -481,7 +481,7 @@ def test_create_payment_valid(mock_create):
             "/api/create_payment?token=valid&groupId=7&recipientId=9&amount=25.00"
         )
     assert response.status_code == 200
-    mock_create.assert_called_once_with("valid", 7, 9, 25.00)
+    mock_create.assert_called_once_with("valid", 7, 9, 25.00, None)
 
 
 @mock.patch("app.payments.create_payment")
@@ -545,7 +545,7 @@ def test_update_payment_valid(mock_update):
             "/api/update_payment?token=valid&paymentId=42&amount=30.00"
         )
     assert response.status_code == 200
-    mock_update.assert_called_once_with("valid", 42, 30.00)
+    mock_update.assert_called_once_with("valid", 42, 30.00, None)
 
 
 @mock.patch("app.payments.update_payment")

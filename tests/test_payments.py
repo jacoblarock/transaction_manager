@@ -20,6 +20,22 @@ def test_create_payment(mock_db, mock_check_auth):
     assert inserted_row["p_u_recipient"] == 9
     assert inserted_row["p_g_ref"] == 7
     assert inserted_row["p_amount"] == 25.00
+    assert "p_date" not in inserted_row
+    assert insert_args[1]["primary_key"] == "p_id"
+
+
+@mock.patch("utils.payments.check_auth")
+@mock.patch("utils.payments.db")
+def test_create_payment_with_date(mock_db, mock_check_auth):
+    mock_check_auth.return_value = 5
+    mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
+    mock_db.select.return_value = [{"row_count": 1}]
+    mock_db.insert.return_value = [42]
+    result = payments.create_payment("token", 7, 9, 25.00, "2026-09-01")
+    assert result == 42
+    insert_args = mock_db.insert.call_args
+    inserted_row = insert_args[0][2][0]
+    assert inserted_row["p_date"] == "2026-09-01"
     assert insert_args[1]["primary_key"] == "p_id"
 
 

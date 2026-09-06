@@ -245,7 +245,7 @@ The cost is split evenly across all group members.
 #### Create Transaction
 
 ```
-GET /api/create_transaction?token=<session_token>&groupId=<group_id>&name=<name>&amount=<amount>
+GET /api/create_transaction?token=<session_token>&groupId=<group_id>&name=<name>&amount=<amount>&date=<date>
 ```
 
 | Parameter | Type | Required |
@@ -254,6 +254,7 @@ GET /api/create_transaction?token=<session_token>&groupId=<group_id>&name=<name>
 | `groupId` | int | yes |
 | `name` | string | yes |
 | `amount` | float | yes |
+| `date` | string (YYYY-MM-DD) | no |
 
 **Responses**
 
@@ -292,17 +293,18 @@ Transaction object:
   "t_name": "dinner",
   "t_g_ref": 1,
   "t_amount": "60.00",
+  "t_date": "2026-09-05",
   "t_created_at": "Sat, 05 Sep 2026 10:11:06 GMT"
 }
 ```
 
 #### Update Transaction
 
-Updates the name and amount of a transaction. The caller must be in the
-transaction's group.
+Updates the name, amount, and optionally the date of a transaction. The
+caller must be in the transaction's group.
 
 ```
-GET /api/update_transaction?token=<session_token>&transactionId=<transaction_id>&name=<name>&amount=<amount>
+GET /api/update_transaction?token=<session_token>&transactionId=<transaction_id>&name=<name>&amount=<amount>&date=<date>
 ```
 
 | Parameter | Type | Required |
@@ -311,6 +313,7 @@ GET /api/update_transaction?token=<session_token>&transactionId=<transaction_id>
 | `transactionId` | int | yes |
 | `name` | string | yes |
 | `amount` | float | yes |
+| `date` | string (YYYY-MM-DD) | no |
 
 **Responses**
 
@@ -348,7 +351,7 @@ Payments are direct transfers from one user to another within a group.
 #### Create Payment
 
 ```
-GET /api/create_payment?token=<session_token>&groupId=<group_id>&recipientId=<user_id>&amount=<amount>
+GET /api/create_payment?token=<session_token>&groupId=<group_id>&recipientId=<user_id>&amount=<amount>&date=<date>
 ```
 
 | Parameter | Type | Required |
@@ -357,6 +360,7 @@ GET /api/create_payment?token=<session_token>&groupId=<group_id>&recipientId=<us
 | `groupId` | int | yes |
 | `recipientId` | int | yes |
 | `amount` | float | yes |
+| `date` | string (YYYY-MM-DD) | no |
 
 **Responses**
 
@@ -395,16 +399,18 @@ Payment object:
   "p_u_recipient": 1,
   "p_g_ref": 1,
   "p_amount": "10.00",
+  "p_date": "2026-09-05",
   "p_created_at": "Sat, 05 Sep 2026 10:11:07 GMT"
 }
 ```
 
 #### Update Payment
 
-Updates the amount of a payment. The caller must be in the payment's group.
+Updates the amount and optionally the date of a payment. The caller must
+be in the payment's group.
 
 ```
-GET /api/update_payment?token=<session_token>&paymentId=<payment_id>&amount=<amount>
+GET /api/update_payment?token=<session_token>&paymentId=<payment_id>&amount=<amount>&date=<date>
 ```
 
 | Parameter | Type | Required |
@@ -412,6 +418,7 @@ GET /api/update_payment?token=<session_token>&paymentId=<payment_id>&amount=<amo
 | `token` | string | yes |
 | `paymentId` | int | yes |
 | `amount` | float | yes |
+| `date` | string (YYYY-MM-DD) | no |
 
 **Responses**
 
