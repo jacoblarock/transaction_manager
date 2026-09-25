@@ -27,16 +27,34 @@ def settle_balances(s_token: str, g_id: int) -> list[dict]:
 
         transaction_rows = db.select(
             conn,
-            f"select t_u_ref, t_amount from transactions where t_g_ref = {g_id};"
+            f"select t_id, t_u_ref, t_amount from transactions where t_g_ref = {g_id};"
         )
-        total = 0.0
+        part_rows = db.select(
+            conn,
+            "select tp_t_ref, tp_u_ref, tp_amount "
+            f"from transaction_parts join transactions on tp_t_ref = t_id "
+            f"where t_g_ref = {g_id};"
+        )
+        parts_by_txn: dict[int, list[dict]] = {}
+        for prow in part_rows:
+            parts_by_txn.setdefault(prow["tp_t_ref"], []).append(prow)
+
         for row in transaction_rows:
+            t_id = row["t_id"]
+            payer = row["t_u_ref"]
             amount = float(row["t_amount"])
-            balances[row["t_u_ref"]] += amount
-            total += amount
-        share = total / n
-        for uid in user_ids:
-            balances[uid] -= share
+            balances[payer] += amount
+            parts = parts_by_txn.get(t_id, [])
+            parts_sum = 0.0
+            for part in parts:
+                part_amount = float(part["tp_amount"])
+                balances[part["tp_u_ref"]] -= part_amount
+                parts_sum += part_amount
+            remainder = amount - parts_sum
+            if remainder > 0.01:
+                share = remainder / n
+                for uid in user_ids:
+                    balances[uid] -= share
 
         payment_rows = db.select(
             conn,

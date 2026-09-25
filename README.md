@@ -562,8 +562,14 @@ GET /api/delete_payment?token=<session_token>&paymentId=<payment_id>
 #### Settle Balances
 
 Calculates the minimum set of payments required to balance the group's
-budget. Takes into account all transactions (split evenly) and existing
-payments between members.
+budget. Takes into account all transactions, their transaction parts, and
+existing payments between members.
+
+For each transaction, the payer is credited the full transaction amount.
+Each transaction part's user is debited their part's amount (they owe the
+payer that much). Any remaining amount not covered by transaction parts is
+split evenly across all group members. Existing payments between members are
+then applied to offset balances.
 
 ```
 GET /api/settle?token=<session_token>&groupId=<group_id>
