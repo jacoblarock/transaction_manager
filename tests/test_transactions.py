@@ -61,10 +61,13 @@ def test_delete_transaction(mock_db, mock_check_auth):
     ]
     result = transactions.delete_transaction("token", 42)
     assert result is True
-    mock_db.delete.assert_called_once()
-    delete_args = mock_db.delete.call_args
-    assert delete_args[0][1] == "transactions"
-    assert delete_args[0][2] == [{"t_id": 42}]
+    assert mock_db.delete.call_count == 2
+    parts_delete_args = mock_db.delete.call_args_list[0]
+    assert parts_delete_args[0][1] == "transaction_parts"
+    assert parts_delete_args[0][2] == [{"tp_t_ref": 42}]
+    txn_delete_args = mock_db.delete.call_args_list[1]
+    assert txn_delete_args[0][1] == "transactions"
+    assert txn_delete_args[0][2] == [{"t_id": 42}]
 
 
 @mock.patch("utils.transactions.check_auth")

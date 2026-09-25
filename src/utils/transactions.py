@@ -58,6 +58,11 @@ def delete_transaction(
             return False
         db.delete(
             conn,
+            "transaction_parts",
+            [{"tp_t_ref": t_id}],
+        )
+        db.delete(
+            conn,
             "transactions",
             [{"t_id": t_id}],
         )
