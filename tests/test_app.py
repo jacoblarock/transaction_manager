@@ -465,6 +465,149 @@ def test_get_transactions_invalid_id(client):
     assert response.status_code == 400
 
 
+# --- transaction part endpoints ---
+
+def test_create_transaction_part_missing_params(client):
+    response = client.get("/api/create_transaction_part?token=valid&transactionId=1")
+    assert response.status_code == 400
+
+
+@mock.patch("app.transaction_parts.create_transaction_part")
+def test_create_transaction_part_valid(mock_create):
+    mock_create.return_value = 42
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get(
+            "/api/create_transaction_part?token=valid&transactionId=1&userId=9&amount=20.00"
+        )
+    assert response.status_code == 200
+    mock_create.assert_called_once_with("valid", 1, 9, 20.00)
+
+
+@mock.patch("app.transaction_parts.create_transaction_part")
+def test_create_transaction_part_not_member(mock_create):
+    mock_create.return_value = -1
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get(
+            "/api/create_transaction_part?token=valid&transactionId=1&userId=9&amount=20.00"
+        )
+    assert response.status_code == 403
+
+
+@mock.patch("app.transaction_parts.create_transaction_part")
+def test_create_transaction_part_exceeds_total(mock_create):
+    mock_create.return_value = -2
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get(
+            "/api/create_transaction_part?token=valid&transactionId=1&userId=9&amount=20.00"
+        )
+    assert response.status_code == 400
+
+
+def test_create_transaction_part_invalid_id(client):
+    response = client.get(
+        "/api/create_transaction_part?token=valid&transactionId=abc&userId=9&amount=20.00"
+    )
+    assert response.status_code == 400
+
+
+def test_delete_transaction_part_missing_params(client):
+    response = client.get("/api/delete_transaction_part?token=valid")
+    assert response.status_code == 400
+
+
+@mock.patch("app.transaction_parts.delete_transaction_part")
+def test_delete_transaction_part_valid(mock_delete):
+    mock_delete.return_value = True
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get("/api/delete_transaction_part?token=valid&partId=42")
+    assert response.status_code == 200
+    mock_delete.assert_called_once_with("valid", 42)
+
+
+@mock.patch("app.transaction_parts.delete_transaction_part")
+def test_delete_transaction_part_not_member(mock_delete):
+    mock_delete.return_value = False
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get("/api/delete_transaction_part?token=valid&partId=42")
+    assert response.status_code == 403
+
+
+def test_delete_transaction_part_invalid_id(client):
+    response = client.get("/api/delete_transaction_part?token=valid&partId=abc")
+    assert response.status_code == 400
+
+
+def test_update_transaction_part_missing_params(client):
+    response = client.get("/api/update_transaction_part?token=valid&partId=1")
+    assert response.status_code == 400
+
+
+@mock.patch("app.transaction_parts.update_transaction_part")
+def test_update_transaction_part_valid(mock_update):
+    mock_update.return_value = True
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get(
+            "/api/update_transaction_part?token=valid&partId=42&userId=9&amount=30.00"
+        )
+    assert response.status_code == 200
+    mock_update.assert_called_once_with("valid", 42, 9, 30.00)
+
+
+@mock.patch("app.transaction_parts.update_transaction_part")
+def test_update_transaction_part_not_member(mock_update):
+    mock_update.return_value = False
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get(
+            "/api/update_transaction_part?token=valid&partId=42&userId=9&amount=30.00"
+        )
+    assert response.status_code == 403
+
+
+@mock.patch("app.transaction_parts.update_transaction_part")
+def test_update_transaction_part_exceeds_total(mock_update):
+    mock_update.return_value = -2
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get(
+            "/api/update_transaction_part?token=valid&partId=42&userId=9&amount=30.00"
+        )
+    assert response.status_code == 400
+
+
+def test_update_transaction_part_invalid_id(client):
+    response = client.get(
+        "/api/update_transaction_part?token=valid&partId=abc&userId=9&amount=30.00"
+    )
+    assert response.status_code == 400
+
+
+def test_get_transaction_parts_missing_params(client):
+    response = client.get("/api/get_transaction_parts?token=valid")
+    assert response.status_code == 400
+
+
+@mock.patch("app.transaction_parts.get_transaction_parts")
+def test_get_transaction_parts_valid(mock_get):
+    mock_get.return_value = [{"tp_id": 1, "tp_amount": "20.00"}]
+    app.app.config["TESTING"] = True
+    with app.app.test_client() as c:
+        response = c.get("/api/get_transaction_parts?token=valid&transactionId=1")
+    assert response.status_code == 200
+    mock_get.assert_called_once_with("valid", 1)
+
+
+def test_get_transaction_parts_invalid_id(client):
+    response = client.get("/api/get_transaction_parts?token=valid&transactionId=abc")
+    assert response.status_code == 400
+
+
 # --- payment endpoints ---
 
 def test_create_payment_missing_params(client):

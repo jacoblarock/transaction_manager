@@ -4,6 +4,7 @@ from utils import auth
 from utils import user
 from utils import groups
 from utils import transactions
+from utils import transaction_parts
 from utils import payments
 from utils import settlement
 import os
@@ -232,6 +233,79 @@ def get_transactions() -> tuple[list | str, int]:
         except ValueError:
             return "invalid id", 400
         rows = transactions.get_transactions(s_token, g_id_int)
+        return rows, 200
+    return "invalid request format", 400
+
+
+@app.route("/api/create_transaction_part", methods=["GET"])
+def create_transaction_part() -> tuple[str, int]:
+    s_token = request.args.get("token")
+    t_id = request.args.get("transactionId")
+    target_u_id = request.args.get("userId")
+    tp_amount = request.args.get("amount")
+    if type(s_token) == str and type(t_id) == str and type(target_u_id) == str and type(tp_amount) == str:
+        try:
+            t_id_int = int(t_id)
+            target_u_id_int = int(target_u_id)
+            tp_amount_float = float(tp_amount)
+        except ValueError:
+            return "invalid id", 400
+        result = transaction_parts.create_transaction_part(s_token, t_id_int, target_u_id_int, tp_amount_float)
+        if result == -1:
+            return "user not in group", 403
+        if result == -2:
+            return "transaction parts exceed total", 400
+        return str(result), 200
+    return "invalid request format", 400
+
+
+@app.route("/api/delete_transaction_part", methods=["GET"])
+def delete_transaction_part() -> tuple[str, int]:
+    s_token = request.args.get("token")
+    tp_id = request.args.get("partId")
+    if type(s_token) == str and type(tp_id) == str:
+        try:
+            tp_id_int = int(tp_id)
+        except ValueError:
+            return "invalid id", 400
+        if not transaction_parts.delete_transaction_part(s_token, tp_id_int):
+            return "user not in group", 403
+        return "success", 200
+    return "invalid request format", 400
+
+
+@app.route("/api/update_transaction_part", methods=["GET"])
+def update_transaction_part() -> tuple[str, int]:
+    s_token = request.args.get("token")
+    tp_id = request.args.get("partId")
+    target_u_id = request.args.get("userId")
+    tp_amount = request.args.get("amount")
+    if type(s_token) == str and type(tp_id) == str and type(target_u_id) == str and type(tp_amount) == str:
+        try:
+            tp_id_int = int(tp_id)
+            target_u_id_int = int(target_u_id)
+            tp_amount_float = float(tp_amount)
+        except ValueError:
+            return "invalid id", 400
+        result = transaction_parts.update_transaction_part(s_token, tp_id_int, target_u_id_int, tp_amount_float)
+        if result == -2:
+            return "transaction parts exceed total", 400
+        if not result:
+            return "user not in group", 403
+        return "success", 200
+    return "invalid request format", 400
+
+
+@app.route("/api/get_transaction_parts", methods=["GET"])
+def get_transaction_parts() -> tuple[list | str, int]:
+    s_token = request.args.get("token")
+    t_id = request.args.get("transactionId")
+    if type(s_token) == str and type(t_id) == str:
+        try:
+            t_id_int = int(t_id)
+        except ValueError:
+            return "invalid id", 400
+        rows = transaction_parts.get_transaction_parts(s_token, t_id_int)
         return rows, 200
     return "invalid request format", 400
 

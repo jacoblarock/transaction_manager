@@ -344,6 +344,114 @@ GET /api/delete_transaction?token=<session_token>&transactionId=<transaction_id>
 | 400 | `invalid id` / `invalid request format` |
 | 403 | `user not in group` |
 
+### Transaction Parts
+
+Transaction parts describe how a transaction's total amount is assigned to
+individual users in the group. The sum of all parts belonging to a transaction
+must not exceed the transaction's total amount; create and update endpoints
+return `400` and make no changes if this constraint would be violated. The
+caller must be a member of the transaction's group.
+
+#### Create Transaction Part
+
+```
+GET /api/create_transaction_part?token=<session_token>&transactionId=<transaction_id>&userId=<user_id>&amount=<amount>
+```
+
+| Parameter | Type | Required |
+|-----------|------|----------|
+| `token` | string | yes |
+| `transactionId` | int | yes |
+| `userId` | int | yes |
+| `amount` | float | yes |
+
+**Responses**
+
+| Status | Body |
+|--------|------|
+| 200 | Transaction part ID (int) |
+| 400 | `transaction parts exceed total` / `invalid id` / `invalid request format` |
+| 403 | `user not in group` |
+
+#### Get Transaction Parts
+
+Returns all transaction parts for a transaction.
+
+```
+GET /api/get_transaction_parts?token=<session_token>&transactionId=<transaction_id>
+```
+
+| Parameter | Type | Required |
+|-----------|------|----------|
+| `token` | string | yes |
+| `transactionId` | int | yes |
+
+**Responses**
+
+| Status | Body |
+|--------|------|
+| 200 | JSON array of transaction parts |
+| 400 | `invalid id` / `invalid request format` |
+
+Transaction part object:
+
+```json
+{
+  "tp_id": 1,
+  "tp_t_ref": 1,
+  "tp_u_ref": 2,
+  "tp_amount": "20.00",
+  "tp_created_at": "Sat, 05 Sep 2026 10:11:06 GMT"
+}
+```
+
+Returns `[]` if the caller is not in the transaction's group.
+
+#### Update Transaction Part
+
+Updates the user and amount of a transaction part. The caller must be in
+the transaction's group.
+
+```
+GET /api/update_transaction_part?token=<session_token>&partId=<part_id>&userId=<user_id>&amount=<amount>
+```
+
+| Parameter | Type | Required |
+|-----------|------|----------|
+| `token` | string | yes |
+| `partId` | int | yes |
+| `userId` | int | yes |
+| `amount` | float | yes |
+
+**Responses**
+
+| Status | Body |
+|--------|------|
+| 200 | `success` |
+| 400 | `transaction parts exceed total` / `invalid id` / `invalid request format` |
+| 403 | `user not in group` |
+
+#### Delete Transaction Part
+
+Deletes a transaction part. The caller must be in the transaction's group.
+
+```
+GET /api/delete_transaction_part?token=<session_token>&partId=<part_id>
+```
+
+| Parameter | Type | Required |
+|-----------|------|----------|
+| `token` | string | yes |
+| `partId` | int | yes |
+
+**Responses**
+
+| Status | Body |
+|--------|------|
+| 200 | `success` |
+| 400 | `invalid id` / `invalid request format` |
+| 403 | `user not in group` |
+
 ### Payments
 
 Payments are direct transfers from one user to another within a group.
