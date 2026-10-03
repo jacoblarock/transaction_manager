@@ -34,14 +34,18 @@ function clearUsername() {
     localStorage.removeItem("username");
 }
 
+// Authorization headers carrying the session token
+function authHeaders() {
+    return { "Authorization": `Bearer ${getToken()}` };
+}
+
 // API helper - returns parsed JSON or throws
 async function apiGet(endpoint, params = {}) {
     const url = new URL(API_BASE + endpoint, window.location.origin);
-    if (!params.token && getToken()) params.token = getToken();
     for (const [k, v] of Object.entries(params)) {
         url.searchParams.set(k, v);
     }
-    const resp = await fetch(url);
+    const resp = await fetch(url, { headers: authHeaders() });
     const text = await resp.text();
     if (resp.ok) {
         try { return JSON.parse(text); }
@@ -60,7 +64,7 @@ async function requireAuth() {
         return false;
     }
     try {
-        const resp = await fetch(`/api/auth_check?token=${encodeURIComponent(getToken())}`);
+        const resp = await fetch("/api/auth_check", { headers: authHeaders() });
         if (!resp.ok) {
             logout();
             return false;

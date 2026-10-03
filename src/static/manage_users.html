@@ -56,7 +56,7 @@
 
         async function getCurrentUser() {
             try {
-                const resp = await fetch(`/api/auth_check?token=${encodeURIComponent(getToken())}`);
+                const resp = await fetch("/api/auth_check", { headers: authHeaders() });
                 if (!resp.ok) { logout(); return; }
             } catch {}
         }
@@ -87,13 +87,13 @@
             alertBox.innerHTML = "";
             if (!username) { alertBox.innerHTML = `<div class="alert alert-danger">Please enter a username.</div>`; return; }
             try {
-                const idResp = await fetch(`/api/get_user_id?token=${encodeURIComponent(getToken())}&user=${encodeURIComponent(username)}`);
+                const idResp = await fetch(`/api/get_user_id?user=${encodeURIComponent(username)}`, { headers: authHeaders() });
                 const idText = await idResp.text();
                 if (!idResp.ok) {
                     alertBox.innerHTML = `<div class="alert alert-danger">User "${escapeHtml(username)}" not found.</div>`;
                     return;
                 }
-                const resp = await fetch(`/api/add_user_to_group?token=${encodeURIComponent(getToken())}&userId=${idText}&groupId=${groupId}`);
+                const resp = await fetch(`/api/add_user_to_group?userId=${idText}&groupId=${groupId}`, { headers: authHeaders() });
                 const text = await resp.text();
                 if (resp.ok) {
                     document.getElementById("addUsername").value = "";
@@ -109,7 +109,7 @@
         window.removeUser = async function(userId, userName) {
             if (!confirm(`Remove ${userName} from this group?`)) return;
             try {
-                const resp = await fetch(`/api/remove_user_from_group?token=${encodeURIComponent(getToken())}&userId=${userId}&groupId=${groupId}`);
+                const resp = await fetch(`/api/remove_user_from_group?userId=${userId}&groupId=${groupId}`, { headers: authHeaders() });
                 const text = await resp.text();
                 if (resp.ok) {
                     loadMembers();

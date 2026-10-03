@@ -13,7 +13,8 @@ def check_auth(s_token: str) -> int:
     with db.connect() as conn:
         session_rows = db.select(
             conn,
-            f"select s_u_ref from sessions where s_token = '{s_token}' and s_expires > '{datetime.now()}';"
+            "select s_u_ref from sessions where s_token = %s and s_expires > %s;",
+            (s_token, datetime.now()),
         )
         if len(session_rows) != 1:
             logger.error("no active session found")
@@ -29,7 +30,8 @@ def check_invite_token(it_token: str) -> int:
     with db.connect() as conn:
         it_id_rows = db.select(
             conn,
-            f"select it_id from invite_tokens where it_token = '{it_token}' and it_expires > '{datetime.now()}';"
+            "select it_id from invite_tokens where it_token = %s and it_expires > %s;",
+            (it_token, datetime.now()),
         )
         if len(it_id_rows) != 1:
             logger.error("no invite token found")
@@ -45,7 +47,8 @@ def authenticate(u_name: str, pass_hash: str) -> tuple[str,int]:
     with db.connect() as conn:
         u_id_rows = db.select(
             conn,
-            f"select u_id from users where u_name = '{u_name}';"
+            "select u_id from users where u_name = %s;",
+            (u_name,),
         )
         if len(u_id_rows) != 1:
             return "user not found", 400
@@ -53,7 +56,8 @@ def authenticate(u_name: str, pass_hash: str) -> tuple[str,int]:
         logger.info(f"Attempting auth for user {u_name} id={u_id}")
         u_pass = db.select(
             conn,
-            f"select u_pass from users where u_id = {u_id};"
+            "select u_pass from users where u_id = %s;",
+            (u_id,),
         )[0]["u_pass"]
         if u_pass == pass_hash:
             s_token = gen_session_token()

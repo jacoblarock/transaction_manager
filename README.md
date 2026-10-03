@@ -6,7 +6,10 @@ how to settle outstanding balances.
 
 ## API Spec
 
-All endpoints are `GET` requests with query string parameters.
+All endpoints are `GET` requests with query string parameters, except where
+noted. Endpoints that require a session token expect it in an
+`Authorization: Bearer <session_token>` request header instead of a query
+parameter.
 
 ### Healthcheck
 
@@ -19,10 +22,13 @@ All endpoints are `GET` requests with query string parameters.
 #### Authenticate
 
 ```
-GET /api/authenticate?user=<username>&passHash=<password_hash>
+POST /api/authenticate
+Content-Type: application/json
+
+{"user": "<username>", "passHash": "<password_hash>"}
 ```
 
-| Parameter | Type | Required |
+| Field | Type | Required |
 |-----------|------|----------|
 | `user` | string | yes |
 | `passHash` | string | yes |
@@ -37,12 +43,8 @@ GET /api/authenticate?user=<username>&passHash=<password_hash>
 #### Auth Check
 
 ```
-GET /api/auth_check?token=<session_token>
+GET /api/auth_check
 ```
-
-| Parameter | Type | Required |
-|-----------|------|----------|
-| `token` | string | yes |
 
 **Responses**
 
@@ -56,12 +58,8 @@ GET /api/auth_check?token=<session_token>
 Generates a new invite token. Requires an authenticated session.
 
 ```
-GET /api/create_invite_token?token=<session_token>
+GET /api/create_invite_token
 ```
-
-| Parameter | Type | Required |
-|-----------|------|----------|
-| `token` | string | yes |
 
 **Responses**
 
@@ -73,10 +71,13 @@ GET /api/create_invite_token?token=<session_token>
 #### Create User from Invite Token
 
 ```
-GET /api/create_user_from_invite_token?token=<invite_token>&user=<username>&passHash=<password_hash>
+POST /api/create_user_from_invite_token
+Content-Type: application/json
+
+{"token": "<invite_token>", "user": "<username>", "passHash": "<password_hash>"}
 ```
 
-| Parameter | Type | Required |
+| Field | Type | Required |
 |-----------|------|----------|
 | `token` | string | yes |
 | `user` | string | yes |
@@ -94,12 +95,11 @@ GET /api/create_user_from_invite_token?token=<invite_token>&user=<username>&pass
 Returns the user ID for a given username. Requires an authenticated session.
 
 ```
-GET /api/get_user_id?token=<session_token>&user=<username>
+GET /api/get_user_id?user=<username>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `user` | string | yes |
 
 **Responses**
@@ -116,12 +116,8 @@ GET /api/get_user_id?token=<session_token>&user=<username>
 Returns all groups the authenticated user belongs to.
 
 ```
-GET /api/get_groups?token=<session_token>
+GET /api/get_groups
 ```
-
-| Parameter | Type | Required |
-|-----------|------|----------|
-| `token` | string | yes |
 
 **Responses**
 
@@ -135,12 +131,11 @@ GET /api/get_groups?token=<session_token>
 Returns the users (IDs and names) in a group. The caller must be a member.
 
 ```
-GET /api/get_group_users?token=<session_token>&groupId=<group_id>
+GET /api/get_group_users?groupId=<group_id>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `groupId` | int | yes |
 
 **Responses**
@@ -157,12 +152,11 @@ Returns `[]` if the caller is not a member of the group.
 Creates a new group and adds the authenticated user to it.
 
 ```
-GET /api/create_group?token=<session_token>&name=<group_name>
+GET /api/create_group?name=<group_name>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `name` | string | yes |
 
 **Responses**
@@ -177,12 +171,11 @@ GET /api/create_group?token=<session_token>&name=<group_name>
 Deletes a group and all its user mappings. The caller must be a member.
 
 ```
-GET /api/delete_group?token=<session_token>&groupId=<group_id>
+GET /api/delete_group?groupId=<group_id>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `groupId` | int | yes |
 
 **Responses**
@@ -198,12 +191,11 @@ GET /api/delete_group?token=<session_token>&groupId=<group_id>
 Adds a user to a group. The caller must be a member of the group.
 
 ```
-GET /api/add_user_to_group?token=<session_token>&userId=<user_id>&groupId=<group_id>
+GET /api/add_user_to_group?userId=<user_id>&groupId=<group_id>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `userId` | int | yes |
 | `groupId` | int | yes |
 
@@ -220,12 +212,11 @@ GET /api/add_user_to_group?token=<session_token>&userId=<user_id>&groupId=<group
 Removes a user from a group. The caller must be a member of the group.
 
 ```
-GET /api/remove_user_from_group?token=<session_token>&userId=<user_id>&groupId=<group_id>
+GET /api/remove_user_from_group?userId=<user_id>&groupId=<group_id>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `userId` | int | yes |
 | `groupId` | int | yes |
 
@@ -245,12 +236,11 @@ The cost is split evenly across all group members.
 #### Create Transaction
 
 ```
-GET /api/create_transaction?token=<session_token>&groupId=<group_id>&name=<name>&amount=<amount>&date=<date>
+GET /api/create_transaction?groupId=<group_id>&name=<name>&amount=<amount>&date=<date>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `groupId` | int | yes |
 | `name` | string | yes |
 | `amount` | float | yes |
@@ -269,12 +259,11 @@ GET /api/create_transaction?token=<session_token>&groupId=<group_id>&name=<name>
 Returns all transactions in a group.
 
 ```
-GET /api/get_transactions?token=<session_token>&groupId=<group_id>
+GET /api/get_transactions?groupId=<group_id>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `groupId` | int | yes |
 
 **Responses**
@@ -304,12 +293,11 @@ Updates the name, amount, and optionally the date of a transaction. The
 caller must be in the transaction's group.
 
 ```
-GET /api/update_transaction?token=<session_token>&transactionId=<transaction_id>&name=<name>&amount=<amount>&date=<date>
+GET /api/update_transaction?transactionId=<transaction_id>&name=<name>&amount=<amount>&date=<date>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `transactionId` | int | yes |
 | `name` | string | yes |
 | `amount` | float | yes |
@@ -328,12 +316,11 @@ GET /api/update_transaction?token=<session_token>&transactionId=<transaction_id>
 Deletes a transaction. The caller must be in the transaction's group.
 
 ```
-GET /api/delete_transaction?token=<session_token>&transactionId=<transaction_id>
+GET /api/delete_transaction?transactionId=<transaction_id>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `transactionId` | int | yes |
 
 **Responses**
@@ -355,12 +342,11 @@ caller must be a member of the transaction's group.
 #### Create Transaction Part
 
 ```
-GET /api/create_transaction_part?token=<session_token>&transactionId=<transaction_id>&userId=<user_id>&amount=<amount>
+GET /api/create_transaction_part?transactionId=<transaction_id>&userId=<user_id>&amount=<amount>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `transactionId` | int | yes |
 | `userId` | int | yes |
 | `amount` | float | yes |
@@ -378,12 +364,11 @@ GET /api/create_transaction_part?token=<session_token>&transactionId=<transactio
 Returns all transaction parts for a transaction.
 
 ```
-GET /api/get_transaction_parts?token=<session_token>&transactionId=<transaction_id>
+GET /api/get_transaction_parts?transactionId=<transaction_id>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `transactionId` | int | yes |
 
 **Responses**
@@ -413,12 +398,11 @@ Updates the user and amount of a transaction part. The caller must be in
 the transaction's group.
 
 ```
-GET /api/update_transaction_part?token=<session_token>&partId=<part_id>&userId=<user_id>&amount=<amount>
+GET /api/update_transaction_part?partId=<part_id>&userId=<user_id>&amount=<amount>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `partId` | int | yes |
 | `userId` | int | yes |
 | `amount` | float | yes |
@@ -436,12 +420,11 @@ GET /api/update_transaction_part?token=<session_token>&partId=<part_id>&userId=<
 Deletes a transaction part. The caller must be in the transaction's group.
 
 ```
-GET /api/delete_transaction_part?token=<session_token>&partId=<part_id>
+GET /api/delete_transaction_part?partId=<part_id>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `partId` | int | yes |
 
 **Responses**
@@ -459,12 +442,11 @@ Payments are direct transfers from one user to another within a group.
 #### Create Payment
 
 ```
-GET /api/create_payment?token=<session_token>&groupId=<group_id>&recipientId=<user_id>&amount=<amount>&date=<date>
+GET /api/create_payment?groupId=<group_id>&recipientId=<user_id>&amount=<amount>&date=<date>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `groupId` | int | yes |
 | `recipientId` | int | yes |
 | `amount` | float | yes |
@@ -483,12 +465,11 @@ GET /api/create_payment?token=<session_token>&groupId=<group_id>&recipientId=<us
 Returns all payments in a group.
 
 ```
-GET /api/get_payments?token=<session_token>&groupId=<group_id>
+GET /api/get_payments?groupId=<group_id>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `groupId` | int | yes |
 
 **Responses**
@@ -518,12 +499,11 @@ Updates the amount and optionally the date of a payment. The caller must
 be in the payment's group.
 
 ```
-GET /api/update_payment?token=<session_token>&paymentId=<payment_id>&amount=<amount>&date=<date>
+GET /api/update_payment?paymentId=<payment_id>&amount=<amount>&date=<date>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `paymentId` | int | yes |
 | `amount` | float | yes |
 | `date` | string (YYYY-MM-DD) | no |
@@ -541,12 +521,11 @@ GET /api/update_payment?token=<session_token>&paymentId=<payment_id>&amount=<amo
 Deletes a payment. The caller must be in the payment's group.
 
 ```
-GET /api/delete_payment?token=<session_token>&paymentId=<payment_id>
+GET /api/delete_payment?paymentId=<payment_id>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `paymentId` | int | yes |
 
 **Responses**
@@ -572,12 +551,11 @@ split evenly across all group members. Existing payments between members are
 then applied to offset balances.
 
 ```
-GET /api/settle?token=<session_token>&groupId=<group_id>
+GET /api/settle?groupId=<group_id>
 ```
 
 | Parameter | Type | Required |
 |-----------|------|----------|
-| `token` | string | yes |
 | `groupId` | int | yes |
 
 **Responses**

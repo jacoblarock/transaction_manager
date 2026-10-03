@@ -21,15 +21,15 @@ def connect() -> PgConnection:
     return connection
 
 
-def execute(conn: PgConnection, query: str) -> int:
+def execute(conn: PgConnection, query: str, params=None) -> int:
     with conn.cursor() as cur:
-        cur.execute(query)
+        cur.execute(query, params)
         return cur.rowcount
 
 
-def select(conn: PgConnection, query: str) -> list[RealDictRow]:
+def select(conn: PgConnection, query: str, params=None) -> list[RealDictRow]:
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        cur.execute(query)
+        cur.execute(query, params)
         return cur.fetchall()
 
 

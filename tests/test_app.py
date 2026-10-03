@@ -17,17 +17,17 @@ def test_healthcheck(client):
 
 
 def test_authenticate_missing_user(client):
-    response = client.get("/api/authenticate?passHash=abc123")
+    response = client.post("/api/authenticate", json={"passHash": "abc123"})
     assert response.status_code == 400
 
 
 def test_authenticate_missing_passhash(client):
-    response = client.get("/api/authenticate?user=alice")
+    response = client.post("/api/authenticate", json={"user": "alice"})
     assert response.status_code == 400
 
 
 def test_authenticate_missing_all_params(client):
-    response = client.get("/api/authenticate")
+    response = client.post("/api/authenticate")
     assert response.status_code == 400
 
 
@@ -36,7 +36,7 @@ def test_authenticate_valid_params(mock_authenticate):
     mock_authenticate.return_value = ("session_token_123", 200)
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/authenticate?user=alice&passHash=abc123")
+        response = c.post("/api/authenticate", json={"user": "alice", "passHash": "abc123"})
     assert response.status_code == 200
     mock_authenticate.assert_called_once_with("alice", "abc123")
 
@@ -46,7 +46,7 @@ def test_authenticate_returns_error(mock_authenticate):
     mock_authenticate.return_value = ("password does not match", 400)
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/authenticate?user=alice&passHash=wrong")
+        response = c.post("/api/authenticate", json={"user": "alice", "passHash": "wrong"})
     assert response.status_code == 400
 
 
@@ -60,7 +60,7 @@ def test_auth_check_valid_session(mock_check_auth):
     mock_check_auth.return_value = 42
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/auth_check?token=valid_token")
+        response = c.get("/api/auth_check", headers={"Authorization": "Bearer valid_token"})
     assert response.status_code == 200
     mock_check_auth.assert_called_once_with("valid_token")
 
@@ -70,7 +70,7 @@ def test_auth_check_session_not_found(mock_check_auth):
     mock_check_auth.return_value = -1
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/auth_check?token=invalid_token")
+        response = c.get("/api/auth_check", headers={"Authorization": "Bearer invalid_token"})
     assert response.status_code == 400
 
 
@@ -82,7 +82,7 @@ def test_create_invite_token_no_token(client):
 @mock.patch("app.auth.check_auth")
 def test_create_invite_token_invalid_session(mock_check_auth, client):
     mock_check_auth.return_value = -1
-    response = client.get("/api/create_invite_token?token=bad")
+    response = client.get("/api/create_invite_token", headers={"Authorization": "Bearer bad"})
     assert response.status_code == 400
 
 
@@ -93,13 +93,13 @@ def test_create_invite_token_valid(mock_check_auth, mock_create):
     mock_create.return_value = "NEW_INVITE_TOKEN_123"
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/create_invite_token?token=valid")
+        response = c.get("/api/create_invite_token", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 200
     mock_create.assert_called_once()
 
 
 def test_get_user_id_missing_params(client):
-    response = client.get("/api/get_user_id?token=valid")
+    response = client.get("/api/get_user_id", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -108,7 +108,7 @@ def test_get_user_id_found(mock_get_user_id):
     mock_get_user_id.return_value = 7
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/get_user_id?token=valid&user=alice")
+        response = c.get("/api/get_user_id?user=alice", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 200
     mock_get_user_id.assert_called_once_with("valid", "alice")
 
@@ -118,17 +118,17 @@ def test_get_user_id_not_found(mock_get_user_id):
     mock_get_user_id.return_value = -1
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/get_user_id?token=valid&user=nobody")
+        response = c.get("/api/get_user_id?user=nobody", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
 def test_create_user_missing_params(client):
-    response = client.get("/api/create_user_from_invite_token")
+    response = client.post("/api/create_user_from_invite_token")
     assert response.status_code == 400
 
 
 def test_create_user_partial_params(client):
-    response = client.get("/api/create_user_from_invite_token?token=abc&user=alice")
+    response = client.post("/api/create_user_from_invite_token", json={"user": "alice"})
     assert response.status_code == 400
 
 
@@ -137,9 +137,9 @@ def test_create_user_valid_params(mock_create):
     mock_create.return_value = ("success", 200)
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get(
-            "/api/create_user_from_invite_token"
-            "?token=invite123&user=alice&passHash=hash123"
+        response = c.post(
+            "/api/create_user_from_invite_token",
+            json={"token": "invite123", "user": "alice", "passHash": "hash123"},
         )
     assert response.status_code == 200
     mock_create.assert_called_once_with("invite123", "alice", "hash123")
@@ -150,9 +150,9 @@ def test_create_user_invalid_token(mock_create):
     mock_create.return_value = ("invalid invite token", 400)
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get(
-            "/api/create_user_from_invite_token"
-            "?token=bad&user=alice&passHash=hash123"
+        response = c.post(
+            "/api/create_user_from_invite_token",
+            json={"token": "bad", "user": "alice", "passHash": "hash123"},
         )
     assert response.status_code == 400
 
@@ -167,13 +167,13 @@ def test_get_groups_valid(mock_get_groups):
     mock_get_groups.return_value = [{"g_id": 1, "g_name": "alpha"}]
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/get_groups?token=valid")
+        response = c.get("/api/get_groups", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 200
     mock_get_groups.assert_called_once_with("valid")
 
 
 def test_create_group_missing_params(client):
-    response = client.get("/api/create_group?token=valid")
+    response = client.get("/api/create_group", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -182,18 +182,18 @@ def test_create_group_valid_params(mock_create_group):
     mock_create_group.return_value = 42
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/create_group?token=valid&name=newgroup")
+        response = c.get("/api/create_group?name=newgroup", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 200
     mock_create_group.assert_called_once_with("valid", "newgroup")
 
 
 def test_delete_group_missing_params(client):
-    response = client.get("/api/delete_group?token=valid")
+    response = client.get("/api/delete_group", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
 def test_delete_group_invalid_id(client):
-    response = client.get("/api/delete_group?token=valid&groupId=abc")
+    response = client.get("/api/delete_group?groupId=abc", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -202,7 +202,7 @@ def test_delete_group_valid_params(mock_delete_group):
     mock_delete_group.return_value = True
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/delete_group?token=valid&groupId=42")
+        response = c.get("/api/delete_group?groupId=42", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 200
     mock_delete_group.assert_called_once_with("valid", 42)
 
@@ -212,14 +212,14 @@ def test_delete_group_not_member(mock_delete_group):
     mock_delete_group.return_value = False
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/delete_group?token=valid&groupId=42")
+        response = c.get("/api/delete_group?groupId=42", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 403
 
 
 @mock.patch("app.auth.check_auth")
 def test_add_user_to_group_missing_params(mock_check_auth, client):
     mock_check_auth.return_value = 42
-    response = client.get("/api/add_user_to_group?token=valid&userId=1")
+    response = client.get("/api/add_user_to_group?userId=1", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -227,7 +227,7 @@ def test_add_user_to_group_missing_params(mock_check_auth, client):
 def test_add_user_to_group_invalid_token(mock_check_auth, client):
     mock_check_auth.return_value = -1
     response = client.get(
-        "/api/add_user_to_group?token=bad&userId=1&groupId=2"
+        "/api/add_user_to_group?userId=1&groupId=2", headers={"Authorization": "Bearer bad"}
     )
     assert response.status_code == 400
 
@@ -236,7 +236,7 @@ def test_add_user_to_group_invalid_token(mock_check_auth, client):
 def test_add_user_to_group_invalid_id(mock_check_auth, client):
     mock_check_auth.return_value = 42
     response = client.get(
-        "/api/add_user_to_group?token=valid&userId=abc&groupId=2"
+        "/api/add_user_to_group?userId=abc&groupId=2", headers={"Authorization": "Bearer valid"}
     )
     assert response.status_code == 400
 
@@ -249,7 +249,7 @@ def test_add_user_to_group_valid_params(mock_check_auth, mock_add):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/add_user_to_group?token=valid&userId=5&groupId=7"
+            "/api/add_user_to_group?userId=5&groupId=7", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 200
     mock_add.assert_called_once_with("valid", 5, 7)
@@ -263,7 +263,7 @@ def test_add_user_to_group_caller_not_in_group(mock_check_auth, mock_add):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/add_user_to_group?token=valid&userId=5&groupId=7"
+            "/api/add_user_to_group?userId=5&groupId=7", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 403
 
@@ -276,7 +276,7 @@ def test_add_user_to_group_already_member(mock_check_auth, mock_add):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/add_user_to_group?token=valid&userId=5&groupId=7"
+            "/api/add_user_to_group?userId=5&groupId=7", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 400
 
@@ -290,7 +290,7 @@ def test_remove_user_from_group_missing_params(client):
 def test_remove_user_from_group_invalid_token(mock_check_auth, client):
     mock_check_auth.return_value = -1
     response = client.get(
-        "/api/remove_user_from_group?token=bad&userId=5&groupId=7"
+        "/api/remove_user_from_group?userId=5&groupId=7", headers={"Authorization": "Bearer bad"}
     )
     assert response.status_code == 400
 
@@ -299,7 +299,7 @@ def test_remove_user_from_group_invalid_token(mock_check_auth, client):
 def test_remove_user_from_group_invalid_id(mock_check_auth, client):
     mock_check_auth.return_value = 42
     response = client.get(
-        "/api/remove_user_from_group?token=valid&userId=abc&groupId=2"
+        "/api/remove_user_from_group?userId=abc&groupId=2", headers={"Authorization": "Bearer valid"}
     )
     assert response.status_code == 400
 
@@ -312,7 +312,7 @@ def test_remove_user_from_group_valid_params(mock_check_auth, mock_remove):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/remove_user_from_group?token=valid&userId=5&groupId=7"
+            "/api/remove_user_from_group?userId=5&groupId=7", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 200
     mock_remove.assert_called_once_with("valid", 5, 7)
@@ -326,7 +326,7 @@ def test_remove_user_from_group_caller_not_in_group(mock_check_auth, mock_remove
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/remove_user_from_group?token=valid&userId=5&groupId=7"
+            "/api/remove_user_from_group?userId=5&groupId=7", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 403
 
@@ -339,7 +339,7 @@ def test_remove_user_from_group_target_not_in_group(mock_check_auth, mock_remove
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/remove_user_from_group?token=valid&userId=5&groupId=7"
+            "/api/remove_user_from_group?userId=5&groupId=7", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 400
 
@@ -347,7 +347,7 @@ def test_remove_user_from_group_target_not_in_group(mock_check_auth, mock_remove
 # --- transaction endpoints ---
 
 def test_create_transaction_missing_params(client):
-    response = client.get("/api/create_transaction?token=valid&groupId=1&name=lunch")
+    response = client.get("/api/create_transaction?groupId=1&name=lunch", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -357,7 +357,7 @@ def test_create_transaction_valid(mock_create):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/create_transaction?token=valid&groupId=7&name=lunch&amount=12.50"
+            "/api/create_transaction?groupId=7&name=lunch&amount=12.50", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 200
     mock_create.assert_called_once_with("valid", 7, "lunch", 12.50, None)
@@ -369,20 +369,20 @@ def test_create_transaction_not_member(mock_create):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/create_transaction?token=valid&groupId=7&name=lunch&amount=12.50"
+            "/api/create_transaction?groupId=7&name=lunch&amount=12.50", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 403
 
 
 def test_create_transaction_invalid_id(client):
     response = client.get(
-        "/api/create_transaction?token=valid&groupId=abc&name=lunch&amount=12.50"
+        "/api/create_transaction?groupId=abc&name=lunch&amount=12.50", headers={"Authorization": "Bearer valid"}
     )
     assert response.status_code == 400
 
 
 def test_delete_transaction_missing_params(client):
-    response = client.get("/api/delete_transaction?token=valid")
+    response = client.get("/api/delete_transaction", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -391,7 +391,7 @@ def test_delete_transaction_valid(mock_delete):
     mock_delete.return_value = True
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/delete_transaction?token=valid&transactionId=42")
+        response = c.get("/api/delete_transaction?transactionId=42", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 200
     mock_delete.assert_called_once_with("valid", 42)
 
@@ -401,17 +401,17 @@ def test_delete_transaction_not_member(mock_delete):
     mock_delete.return_value = False
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/delete_transaction?token=valid&transactionId=42")
+        response = c.get("/api/delete_transaction?transactionId=42", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 403
 
 
 def test_delete_transaction_invalid_id(client):
-    response = client.get("/api/delete_transaction?token=valid&transactionId=abc")
+    response = client.get("/api/delete_transaction?transactionId=abc", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
 def test_update_transaction_missing_params(client):
-    response = client.get("/api/update_transaction?token=valid&transactionId=1")
+    response = client.get("/api/update_transaction?transactionId=1", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -421,7 +421,7 @@ def test_update_transaction_valid(mock_update):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/update_transaction?token=valid&transactionId=42&name=dinner&amount=25.00"
+            "/api/update_transaction?transactionId=42&name=dinner&amount=25.00", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 200
     mock_update.assert_called_once_with("valid", 42, "dinner", 25.00, None)
@@ -433,20 +433,20 @@ def test_update_transaction_not_member(mock_update):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/update_transaction?token=valid&transactionId=42&name=dinner&amount=25.00"
+            "/api/update_transaction?transactionId=42&name=dinner&amount=25.00", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 403
 
 
 def test_update_transaction_invalid_id(client):
     response = client.get(
-        "/api/update_transaction?token=valid&transactionId=abc&name=dinner&amount=25.00"
+        "/api/update_transaction?transactionId=abc&name=dinner&amount=25.00", headers={"Authorization": "Bearer valid"}
     )
     assert response.status_code == 400
 
 
 def test_get_transactions_missing_params(client):
-    response = client.get("/api/get_transactions?token=valid")
+    response = client.get("/api/get_transactions", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -455,20 +455,20 @@ def test_get_transactions_valid(mock_get):
     mock_get.return_value = [{"t_id": 1, "t_name": "lunch"}]
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/get_transactions?token=valid&groupId=7")
+        response = c.get("/api/get_transactions?groupId=7", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 200
     mock_get.assert_called_once_with("valid", 7)
 
 
 def test_get_transactions_invalid_id(client):
-    response = client.get("/api/get_transactions?token=valid&groupId=abc")
+    response = client.get("/api/get_transactions?groupId=abc", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
 # --- transaction part endpoints ---
 
 def test_create_transaction_part_missing_params(client):
-    response = client.get("/api/create_transaction_part?token=valid&transactionId=1")
+    response = client.get("/api/create_transaction_part?transactionId=1", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -478,7 +478,7 @@ def test_create_transaction_part_valid(mock_create):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/create_transaction_part?token=valid&transactionId=1&userId=9&amount=20.00"
+            "/api/create_transaction_part?transactionId=1&userId=9&amount=20.00", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 200
     mock_create.assert_called_once_with("valid", 1, 9, 20.00)
@@ -490,7 +490,7 @@ def test_create_transaction_part_not_member(mock_create):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/create_transaction_part?token=valid&transactionId=1&userId=9&amount=20.00"
+            "/api/create_transaction_part?transactionId=1&userId=9&amount=20.00", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 403
 
@@ -501,20 +501,20 @@ def test_create_transaction_part_exceeds_total(mock_create):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/create_transaction_part?token=valid&transactionId=1&userId=9&amount=20.00"
+            "/api/create_transaction_part?transactionId=1&userId=9&amount=20.00", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 400
 
 
 def test_create_transaction_part_invalid_id(client):
     response = client.get(
-        "/api/create_transaction_part?token=valid&transactionId=abc&userId=9&amount=20.00"
+        "/api/create_transaction_part?transactionId=abc&userId=9&amount=20.00", headers={"Authorization": "Bearer valid"}
     )
     assert response.status_code == 400
 
 
 def test_delete_transaction_part_missing_params(client):
-    response = client.get("/api/delete_transaction_part?token=valid")
+    response = client.get("/api/delete_transaction_part", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -523,7 +523,7 @@ def test_delete_transaction_part_valid(mock_delete):
     mock_delete.return_value = True
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/delete_transaction_part?token=valid&partId=42")
+        response = c.get("/api/delete_transaction_part?partId=42", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 200
     mock_delete.assert_called_once_with("valid", 42)
 
@@ -533,17 +533,17 @@ def test_delete_transaction_part_not_member(mock_delete):
     mock_delete.return_value = False
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/delete_transaction_part?token=valid&partId=42")
+        response = c.get("/api/delete_transaction_part?partId=42", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 403
 
 
 def test_delete_transaction_part_invalid_id(client):
-    response = client.get("/api/delete_transaction_part?token=valid&partId=abc")
+    response = client.get("/api/delete_transaction_part?partId=abc", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
 def test_update_transaction_part_missing_params(client):
-    response = client.get("/api/update_transaction_part?token=valid&partId=1")
+    response = client.get("/api/update_transaction_part?partId=1", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -553,7 +553,7 @@ def test_update_transaction_part_valid(mock_update):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/update_transaction_part?token=valid&partId=42&userId=9&amount=30.00"
+            "/api/update_transaction_part?partId=42&userId=9&amount=30.00", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 200
     mock_update.assert_called_once_with("valid", 42, 9, 30.00)
@@ -565,7 +565,7 @@ def test_update_transaction_part_not_member(mock_update):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/update_transaction_part?token=valid&partId=42&userId=9&amount=30.00"
+            "/api/update_transaction_part?partId=42&userId=9&amount=30.00", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 403
 
@@ -576,20 +576,20 @@ def test_update_transaction_part_exceeds_total(mock_update):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/update_transaction_part?token=valid&partId=42&userId=9&amount=30.00"
+            "/api/update_transaction_part?partId=42&userId=9&amount=30.00", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 400
 
 
 def test_update_transaction_part_invalid_id(client):
     response = client.get(
-        "/api/update_transaction_part?token=valid&partId=abc&userId=9&amount=30.00"
+        "/api/update_transaction_part?partId=abc&userId=9&amount=30.00", headers={"Authorization": "Bearer valid"}
     )
     assert response.status_code == 400
 
 
 def test_get_transaction_parts_missing_params(client):
-    response = client.get("/api/get_transaction_parts?token=valid")
+    response = client.get("/api/get_transaction_parts", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -598,20 +598,20 @@ def test_get_transaction_parts_valid(mock_get):
     mock_get.return_value = [{"tp_id": 1, "tp_amount": "20.00"}]
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/get_transaction_parts?token=valid&transactionId=1")
+        response = c.get("/api/get_transaction_parts?transactionId=1", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 200
     mock_get.assert_called_once_with("valid", 1)
 
 
 def test_get_transaction_parts_invalid_id(client):
-    response = client.get("/api/get_transaction_parts?token=valid&transactionId=abc")
+    response = client.get("/api/get_transaction_parts?transactionId=abc", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
 # --- payment endpoints ---
 
 def test_create_payment_missing_params(client):
-    response = client.get("/api/create_payment?token=valid&groupId=1")
+    response = client.get("/api/create_payment?groupId=1", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -621,7 +621,7 @@ def test_create_payment_valid(mock_create):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/create_payment?token=valid&groupId=7&recipientId=9&amount=25.00"
+            "/api/create_payment?groupId=7&recipientId=9&amount=25.00", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 200
     mock_create.assert_called_once_with("valid", 7, 9, 25.00, None)
@@ -633,20 +633,20 @@ def test_create_payment_not_member(mock_create):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/create_payment?token=valid&groupId=7&recipientId=9&amount=25.00"
+            "/api/create_payment?groupId=7&recipientId=9&amount=25.00", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 403
 
 
 def test_create_payment_invalid_id(client):
     response = client.get(
-        "/api/create_payment?token=valid&groupId=abc&recipientId=9&amount=25.00"
+        "/api/create_payment?groupId=abc&recipientId=9&amount=25.00", headers={"Authorization": "Bearer valid"}
     )
     assert response.status_code == 400
 
 
 def test_delete_payment_missing_params(client):
-    response = client.get("/api/delete_payment?token=valid")
+    response = client.get("/api/delete_payment", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -655,7 +655,7 @@ def test_delete_payment_valid(mock_delete):
     mock_delete.return_value = True
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/delete_payment?token=valid&paymentId=42")
+        response = c.get("/api/delete_payment?paymentId=42", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 200
     mock_delete.assert_called_once_with("valid", 42)
 
@@ -665,17 +665,17 @@ def test_delete_payment_not_member(mock_delete):
     mock_delete.return_value = False
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/delete_payment?token=valid&paymentId=42")
+        response = c.get("/api/delete_payment?paymentId=42", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 403
 
 
 def test_delete_payment_invalid_id(client):
-    response = client.get("/api/delete_payment?token=valid&paymentId=abc")
+    response = client.get("/api/delete_payment?paymentId=abc", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
 def test_update_payment_missing_params(client):
-    response = client.get("/api/update_payment?token=valid&paymentId=1")
+    response = client.get("/api/update_payment?paymentId=1", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -685,7 +685,7 @@ def test_update_payment_valid(mock_update):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/update_payment?token=valid&paymentId=42&amount=30.00"
+            "/api/update_payment?paymentId=42&amount=30.00", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 200
     mock_update.assert_called_once_with("valid", 42, 30.00, None)
@@ -697,20 +697,20 @@ def test_update_payment_not_member(mock_update):
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.get(
-            "/api/update_payment?token=valid&paymentId=42&amount=30.00"
+            "/api/update_payment?paymentId=42&amount=30.00", headers={"Authorization": "Bearer valid"}
         )
     assert response.status_code == 403
 
 
 def test_update_payment_invalid_id(client):
     response = client.get(
-        "/api/update_payment?token=valid&paymentId=abc&amount=30.00"
+        "/api/update_payment?paymentId=abc&amount=30.00", headers={"Authorization": "Bearer valid"}
     )
     assert response.status_code == 400
 
 
 def test_get_payments_missing_params(client):
-    response = client.get("/api/get_payments?token=valid")
+    response = client.get("/api/get_payments", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -719,20 +719,20 @@ def test_get_payments_valid(mock_get):
     mock_get.return_value = [{"p_id": 1, "p_amount": 25.00}]
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/get_payments?token=valid&groupId=7")
+        response = c.get("/api/get_payments?groupId=7", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 200
     mock_get.assert_called_once_with("valid", 7)
 
 
 def test_get_payments_invalid_id(client):
-    response = client.get("/api/get_payments?token=valid&groupId=abc")
+    response = client.get("/api/get_payments?groupId=abc", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
 # --- settle endpoint ---
 
 def test_settle_missing_params(client):
-    response = client.get("/api/settle?token=valid")
+    response = client.get("/api/settle", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -741,20 +741,20 @@ def test_settle_valid(mock_settle):
     mock_settle.return_value = [{"from": 2, "to": 1, "amount": 50.0}]
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/settle?token=valid&groupId=7")
+        response = c.get("/api/settle?groupId=7", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 200
     mock_settle.assert_called_once_with("valid", 7)
 
 
 def test_settle_invalid_id(client):
-    response = client.get("/api/settle?token=valid&groupId=abc")
+    response = client.get("/api/settle?groupId=abc", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
 # --- get group users endpoint ---
 
 def test_get_group_users_missing_params(client):
-    response = client.get("/api/get_group_users?token=valid")
+    response = client.get("/api/get_group_users", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
 
 
@@ -763,11 +763,11 @@ def test_get_group_users_valid(mock_get_users):
     mock_get_users.return_value = [{"u_id": 1, "u_name": "alice"}]
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
-        response = c.get("/api/get_group_users?token=valid&groupId=7")
+        response = c.get("/api/get_group_users?groupId=7", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 200
     mock_get_users.assert_called_once_with("valid", 7)
 
 
 def test_get_group_users_invalid_id(client):
-    response = client.get("/api/get_group_users?token=valid&groupId=abc")
+    response = client.get("/api/get_group_users?groupId=abc", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400

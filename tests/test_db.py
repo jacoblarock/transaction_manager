@@ -39,7 +39,14 @@ def test_execute_returns_rowcount():
     conn, cursor = _mock_conn(rowcount=3)
     result = db.execute(conn, "delete from users where true")
     assert result == 3
-    cursor.execute.assert_called_once_with("delete from users where true")
+    cursor.execute.assert_called_once_with("delete from users where true", None)
+
+
+def test_execute_with_params():
+    conn, cursor = _mock_conn(rowcount=1)
+    result = db.execute(conn, "delete from sessions where s_token = %s", ("abc",))
+    assert result == 1
+    cursor.execute.assert_called_once_with("delete from sessions where s_token = %s", ("abc",))
 
 
 def test_select_returns_rows():
@@ -47,7 +54,7 @@ def test_select_returns_rows():
     conn, cursor = _mock_conn(fetchall=rows)
     result = db.select(conn, "select * from users")
     assert result == rows
-    cursor.execute.assert_called_once()
+    cursor.execute.assert_called_once_with("select * from users", None)
 
 
 @mock.patch("utils.db.execute_values")

@@ -11,7 +11,7 @@
         (async () => {
             if (getToken()) {
                 try {
-                    const resp = await fetch(`/api/auth_check?token=${encodeURIComponent(getToken())}`);
+                    const resp = await fetch("/api/auth_check", { headers: authHeaders() });
                     if (resp.ok) {
                         window.location.href = "/static/groups.html";
                         return;

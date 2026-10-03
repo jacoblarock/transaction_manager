@@ -284,9 +284,9 @@
             alertBox.innerHTML = "";
             if (!name || !amount) { alertBox.innerHTML = `<div class="alert alert-danger">All fields required.</div>`; return; }
             try {
-                let url = `/api/create_transaction?token=${encodeURIComponent(getToken())}&groupId=${groupId}&name=${encodeURIComponent(name)}&amount=${amount}`;
+                let url = `/api/create_transaction?groupId=${groupId}&name=${encodeURIComponent(name)}&amount=${amount}`;
                 if (date) url += `&date=${date}`;
-                const resp = await fetch(url);
+                const resp = await fetch(url, { headers: authHeaders() });
                 const text = await resp.text();
                 if (resp.ok) {
                     bootstrap.Modal.getInstance(document.getElementById("addTxnModal")).hide();
@@ -316,10 +316,10 @@
             alertBox.innerHTML = "";
             if (!amount) { alertBox.innerHTML = `<div class="alert alert-danger">Amount required.</div>`; return; }
             try {
-                let url = `/api/create_payment?token=${encodeURIComponent(getToken())}&groupId=${groupId}&recipientId=${recipientId}&amount=${amount}`;
+                let url = `/api/create_payment?groupId=${groupId}&recipientId=${recipientId}&amount=${amount}`;
                 const date = document.getElementById("payDate").value;
                 if (date) url += `&date=${date}`;
-                const resp = await fetch(url);
+                const resp = await fetch(url, { headers: authHeaders() });
                 const text = await resp.text();
                 if (resp.ok) {
                     bootstrap.Modal.getInstance(document.getElementById("addPayModal")).hide();
@@ -349,9 +349,9 @@
             alertBox.innerHTML = "";
             if (!name || !amount) { alertBox.innerHTML = `<div class="alert alert-danger">All fields required.</div>`; return; }
             try {
-                let url = `/api/update_transaction?token=${encodeURIComponent(getToken())}&transactionId=${currentEditTxnId}&name=${encodeURIComponent(name)}&amount=${amount}`;
+                let url = `/api/update_transaction?transactionId=${currentEditTxnId}&name=${encodeURIComponent(name)}&amount=${amount}`;
                 if (date) url += `&date=${date}`;
-                const resp = await fetch(url);
+                const resp = await fetch(url, { headers: authHeaders() });
                 const text = await resp.text();
                 if (resp.ok) {
                     bootstrap.Modal.getInstance(document.getElementById("editTxnModal")).hide();
@@ -368,7 +368,7 @@
             const alertBox = document.getElementById("editTxnAlert");
             alertBox.innerHTML = "";
             try {
-                const resp = await fetch(`/api/delete_transaction?token=${encodeURIComponent(getToken())}&transactionId=${currentEditTxnId}`);
+                const resp = await fetch(`/api/delete_transaction?transactionId=${currentEditTxnId}`, { headers: authHeaders() });
                 const text = await resp.text();
                 if (resp.ok) {
                     bootstrap.Modal.getInstance(document.getElementById("editTxnModal")).hide();
@@ -396,9 +396,9 @@
             alertBox.innerHTML = "";
             if (!amount) { alertBox.innerHTML = `<div class="alert alert-danger">Amount required.</div>`; return; }
             try {
-                let url = `/api/update_payment?token=${encodeURIComponent(getToken())}&paymentId=${currentEditPayId}&amount=${amount}`;
+                let url = `/api/update_payment?paymentId=${currentEditPayId}&amount=${amount}`;
                 if (date) url += `&date=${date}`;
-                const resp = await fetch(url);
+                const resp = await fetch(url, { headers: authHeaders() });
                 const text = await resp.text();
                 if (resp.ok) {
                     bootstrap.Modal.getInstance(document.getElementById("editPayModal")).hide();
@@ -415,7 +415,7 @@
             const alertBox = document.getElementById("editPayAlert");
             alertBox.innerHTML = "";
             try {
-                const resp = await fetch(`/api/delete_payment?token=${encodeURIComponent(getToken())}&paymentId=${currentEditPayId}`);
+                const resp = await fetch(`/api/delete_payment?paymentId=${currentEditPayId}`, { headers: authHeaders() });
                 const text = await resp.text();
                 if (resp.ok) {
                     bootstrap.Modal.getInstance(document.getElementById("editPayModal")).hide();

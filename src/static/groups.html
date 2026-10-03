@@ -101,7 +101,7 @@
             alertBox.innerHTML = "";
             if (!name) { alertBox.innerHTML = `<div class="alert alert-danger">Please enter a group name.</div>`; return; }
             try {
-                const resp = await fetch(`/api/create_group?token=${encodeURIComponent(getToken())}&name=${encodeURIComponent(name)}`);
+                const resp = await fetch(`/api/create_group?name=${encodeURIComponent(name)}`, { headers: authHeaders() });
                 const text = await resp.text();
                 if (resp.ok) {
                     bootstrap.Modal.getInstance(document.getElementById("createGroupModal")).hide();
@@ -119,7 +119,7 @@
             const alertBox = document.getElementById("inviteAlertBox");
             alertBox.innerHTML = "";
             try {
-                const resp = await fetch(`/api/create_invite_token?token=${encodeURIComponent(getToken())}`);
+                const resp = await fetch("/api/create_invite_token", { headers: authHeaders() });
                 const text = await resp.text();
                 if (resp.ok) {
                     document.getElementById("inviteToken").value = text;

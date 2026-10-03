@@ -12,6 +12,12 @@ import os
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"), static_url_path="/static")
 
 
+def get_auth_token() -> str | None:
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        return auth_header[len("Bearer "):] or None
+    return auth_header or None
+
 
 @app.route("/")
 def index():
@@ -23,10 +29,11 @@ def healthcheck() -> tuple[str,int]:
     return "healthcheck", 200
 
 
-@app.route("/api/authenticate", methods=["GET"])
+@app.route("/api/authenticate", methods=["POST"])
 def authenticate() -> tuple[str,int]:
-    u_name = request.args.get("user")
-    pass_hash = request.args.get("passHash")
+    data = request.get_json(silent=True) or request.form
+    u_name = data.get("user")
+    pass_hash = data.get("passHash")
     if type(u_name) == str and type(pass_hash) == str:
         return auth.authenticate(u_name, pass_hash)
     return "invalid request format", 400
@@ -34,7 +41,7 @@ def authenticate() -> tuple[str,int]:
 
 @app.route("/api/auth_check", methods=["GET"])
 def auth_check() -> tuple[str,int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     if not s_token:
         return "no token provided", 400
     if auth.check_auth(s_token) > 0:
@@ -44,7 +51,7 @@ def auth_check() -> tuple[str,int]:
 
 @app.route("/api/create_invite_token", methods=["GET"])
 def create_invite_token() -> tuple[str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     if not s_token:
         return "no token provided", 400
     if auth.check_auth(s_token) < 0:
@@ -54,7 +61,7 @@ def create_invite_token() -> tuple[str, int]:
 
 @app.route("/api/get_user_id", methods=["GET"])
 def get_user_id() -> tuple[str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     u_name = request.args.get("user")
     if type(s_token) == str and type(u_name) == str:
         result = user.get_user_id(s_token, u_name)
@@ -64,11 +71,12 @@ def get_user_id() -> tuple[str, int]:
     return "invalid request format", 400
 
 
-@app.route("/api/create_user_from_invite_token", methods=["GET"])
+@app.route("/api/create_user_from_invite_token", methods=["POST"])
 def create_user_from_invite_token() -> tuple[str,int]:
-    it_token = request.args.get("token")
-    u_name = request.args.get("user")
-    pass_hash = request.args.get("passHash")
+    data = request.get_json(silent=True) or request.form
+    it_token = data.get("token")
+    u_name = data.get("user")
+    pass_hash = data.get("passHash")
     if type(it_token) == str and type(u_name) == str and type(pass_hash) == str:
         return user.create_user_with_token(it_token, u_name, pass_hash)
     return "invalid request format", 400
@@ -76,7 +84,7 @@ def create_user_from_invite_token() -> tuple[str,int]:
 
 @app.route("/api/get_groups", methods=["GET"])
 def get_groups() -> tuple[list | str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     if not s_token:
         return "no token provided", 400
     rows = groups.get_groups(s_token)
@@ -85,7 +93,7 @@ def get_groups() -> tuple[list | str, int]:
 
 @app.route("/api/get_group_users", methods=["GET"])
 def get_group_users() -> tuple[list | str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     g_id = request.args.get("groupId")
     if type(s_token) == str and type(g_id) == str:
         try:
@@ -99,7 +107,7 @@ def get_group_users() -> tuple[list | str, int]:
 
 @app.route("/api/create_group", methods=["GET"])
 def create_group() -> tuple[str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     g_name = request.args.get("name")
     if type(s_token) == str and type(g_name) == str:
         return str(groups.create_group(s_token, g_name)), 200
@@ -108,7 +116,7 @@ def create_group() -> tuple[str, int]:
 
 @app.route("/api/delete_group", methods=["GET"])
 def delete_group() -> tuple[str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     g_id = request.args.get("groupId")
     if type(s_token) == str and type(g_id) == str:
         try:
@@ -123,7 +131,7 @@ def delete_group() -> tuple[str, int]:
 
 @app.route("/api/add_user_to_group", methods=["GET"])
 def add_user_to_group() -> tuple[str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     if not s_token:
         return "invalid request format", 400
     if auth.check_auth(s_token) < 0:
@@ -147,7 +155,7 @@ def add_user_to_group() -> tuple[str, int]:
 
 @app.route("/api/remove_user_from_group", methods=["GET"])
 def remove_user_from_group() -> tuple[str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     if not s_token:
         return "invalid request format", 400
     if auth.check_auth(s_token) < 0:
@@ -171,7 +179,7 @@ def remove_user_from_group() -> tuple[str, int]:
 
 @app.route("/api/create_transaction", methods=["GET"])
 def create_transaction() -> tuple[str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     g_id = request.args.get("groupId")
     t_name = request.args.get("name")
     t_amount = request.args.get("amount")
@@ -191,7 +199,7 @@ def create_transaction() -> tuple[str, int]:
 
 @app.route("/api/delete_transaction", methods=["GET"])
 def delete_transaction() -> tuple[str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     t_id = request.args.get("transactionId")
     if type(s_token) == str and type(t_id) == str:
         try:
@@ -206,7 +214,7 @@ def delete_transaction() -> tuple[str, int]:
 
 @app.route("/api/update_transaction", methods=["GET"])
 def update_transaction() -> tuple[str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     t_id = request.args.get("transactionId")
     t_name = request.args.get("name")
     t_amount = request.args.get("amount")
@@ -225,7 +233,7 @@ def update_transaction() -> tuple[str, int]:
 
 @app.route("/api/get_transactions", methods=["GET"])
 def get_transactions() -> tuple[list | str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     g_id = request.args.get("groupId")
     if type(s_token) == str and type(g_id) == str:
         try:
@@ -239,7 +247,7 @@ def get_transactions() -> tuple[list | str, int]:
 
 @app.route("/api/create_transaction_part", methods=["GET"])
 def create_transaction_part() -> tuple[str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     t_id = request.args.get("transactionId")
     target_u_id = request.args.get("userId")
     tp_amount = request.args.get("amount")
@@ -261,7 +269,7 @@ def create_transaction_part() -> tuple[str, int]:
 
 @app.route("/api/delete_transaction_part", methods=["GET"])
 def delete_transaction_part() -> tuple[str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     tp_id = request.args.get("partId")
     if type(s_token) == str and type(tp_id) == str:
         try:
@@ -276,7 +284,7 @@ def delete_transaction_part() -> tuple[str, int]:
 
 @app.route("/api/update_transaction_part", methods=["GET"])
 def update_transaction_part() -> tuple[str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     tp_id = request.args.get("partId")
     target_u_id = request.args.get("userId")
     tp_amount = request.args.get("amount")
@@ -298,7 +306,7 @@ def update_transaction_part() -> tuple[str, int]:
 
 @app.route("/api/get_transaction_parts", methods=["GET"])
 def get_transaction_parts() -> tuple[list | str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     t_id = request.args.get("transactionId")
     if type(s_token) == str and type(t_id) == str:
         try:
@@ -312,7 +320,7 @@ def get_transaction_parts() -> tuple[list | str, int]:
 
 @app.route("/api/create_payment", methods=["GET"])
 def create_payment() -> tuple[str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     g_id = request.args.get("groupId")
     recipient_u_id = request.args.get("recipientId")
     p_amount = request.args.get("amount")
@@ -333,7 +341,7 @@ def create_payment() -> tuple[str, int]:
 
 @app.route("/api/delete_payment", methods=["GET"])
 def delete_payment() -> tuple[str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     p_id = request.args.get("paymentId")
     if type(s_token) == str and type(p_id) == str:
         try:
@@ -348,7 +356,7 @@ def delete_payment() -> tuple[str, int]:
 
 @app.route("/api/update_payment", methods=["GET"])
 def update_payment() -> tuple[str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     p_id = request.args.get("paymentId")
     p_amount = request.args.get("amount")
     p_date = request.args.get("date")
@@ -366,7 +374,7 @@ def update_payment() -> tuple[str, int]:
 
 @app.route("/api/get_payments", methods=["GET"])
 def get_payments() -> tuple[list | str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     g_id = request.args.get("groupId")
     if type(s_token) == str and type(g_id) == str:
         try:
@@ -380,7 +388,7 @@ def get_payments() -> tuple[list | str, int]:
 
 @app.route("/api/settle", methods=["GET"])
 def settle() -> tuple[list | str, int]:
-    s_token = request.args.get("token")
+    s_token = get_auth_token()
     g_id = request.args.get("groupId")
     if type(s_token) == str and type(g_id) == str:
         try:

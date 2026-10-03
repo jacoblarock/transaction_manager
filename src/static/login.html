@@ -45,7 +45,11 @@
                 const username = document.getElementById("username").value;
                 const password = document.getElementById("password").value;
                 const passHash = await hashPassword(password);
-                const resp = await fetch(`/api/authenticate?user=${encodeURIComponent(username)}&passHash=${encodeURIComponent(passHash)}`);
+                const resp = await fetch("/api/authenticate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ user: username, passHash }),
+                });
                 const text = await resp.text();
                 if (resp.ok) {
                     setToken(text);

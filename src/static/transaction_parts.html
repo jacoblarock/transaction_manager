@@ -207,8 +207,8 @@
             alertBox.innerHTML = "";
             if (!amount) { alertBox.innerHTML = `<div class="alert alert-danger">Amount required.</div>`; return; }
             try {
-                let url = `/api/create_transaction_part?token=${encodeURIComponent(getToken())}&transactionId=${txnId}&userId=${userId}&amount=${amount}`;
-                const resp = await fetch(url);
+                let url = `/api/create_transaction_part?transactionId=${txnId}&userId=${userId}&amount=${amount}`;
+                const resp = await fetch(url, { headers: authHeaders() });
                 const text = await resp.text();
                 if (resp.ok) {
                     bootstrap.Modal.getInstance(document.getElementById("addPartModal")).hide();
@@ -238,8 +238,8 @@
             alertBox.innerHTML = "";
             if (!amount) { alertBox.innerHTML = `<div class="alert alert-danger">Amount required.</div>`; return; }
             try {
-                let url = `/api/update_transaction_part?token=${encodeURIComponent(getToken())}&partId=${currentEditPartId}&userId=${userId}&amount=${amount}`;
-                const resp = await fetch(url);
+                let url = `/api/update_transaction_part?partId=${currentEditPartId}&userId=${userId}&amount=${amount}`;
+                const resp = await fetch(url, { headers: authHeaders() });
                 const text = await resp.text();
                 if (resp.ok) {
                     bootstrap.Modal.getInstance(document.getElementById("editPartModal")).hide();
@@ -256,7 +256,7 @@
             const alertBox = document.getElementById("editPartAlert");
             alertBox.innerHTML = "";
             try {
-                const resp = await fetch(`/api/delete_transaction_part?token=${encodeURIComponent(getToken())}&partId=${currentEditPartId}`);
+                const resp = await fetch(`/api/delete_transaction_part?partId=${currentEditPartId}`, { headers: authHeaders() });
                 const text = await resp.text();
                 if (resp.ok) {
                     bootstrap.Modal.getInstance(document.getElementById("editPartModal")).hide();

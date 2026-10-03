@@ -50,8 +50,11 @@
                 const username = document.getElementById("username").value;
                 const password = document.getElementById("password").value;
                 const passHash = await hashPassword(password);
-                const url = `/api/create_user_from_invite_token?token=${encodeURIComponent(token)}&user=${encodeURIComponent(username)}&passHash=${encodeURIComponent(passHash)}`;
-                const resp = await fetch(url);
+                const resp = await fetch("/api/create_user_from_invite_token", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token, user: username, passHash }),
+                });
                 const text = await resp.text();
                 if (resp.ok) {
                     alertBox.innerHTML = `<div class="alert alert-success">Account created! Redirecting to login...</div>`;
