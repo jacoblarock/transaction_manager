@@ -7,6 +7,7 @@ from utils import transactions
 from utils import transaction_parts
 from utils import payments
 from utils import settlement
+from utils.rate_limit import rate_limit
 import os
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"), static_url_path="/static")
@@ -38,6 +39,7 @@ def healthcheck() -> tuple[str,int]:
 
 
 @app.route("/api/authenticate", methods=["POST"])
+@rate_limit
 def authenticate() -> tuple[dict,int]:
     data = request.get_json(silent=True) or request.form
     u_name = data.get("user")
@@ -86,6 +88,7 @@ def get_user_id() -> tuple[str | dict, int]:
 
 
 @app.route("/api/create_user_from_invite_token", methods=["POST"])
+@rate_limit
 def create_user_from_invite_token() -> tuple[dict,int]:
     data = request.get_json(silent=True) or request.form
     it_token = data.get("token")

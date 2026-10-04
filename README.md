@@ -44,6 +44,7 @@ Content-Type: application/json
 |--------|------|
 | 200 | `{"token": "<session_token>"}` |
 | 400 | `user not found` / `password does not match` / `invalid request format` |
+| 429 | `too many requests` (rate limited to 5 requests per 60s per client IP) |
 
 #### Auth Check
 
@@ -94,6 +95,7 @@ Content-Type: application/json
 |--------|------|
 | 200 | `{"success": true}` |
 | 400 | `invalid invite token` / `user with username already exists` / `invalid request format` |
+| 429 | `too many requests` (rate limited to 5 requests per 60s per client IP) |
 
 #### Get User ID
 

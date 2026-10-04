@@ -17,6 +17,16 @@ def check_auth_mock():
         yield m
 
 
+import utils.rate_limit
+
+
+@pytest.fixture(autouse=True)
+def clear_rate_limits():
+    utils.rate_limit.reset_rate_limits()
+    yield
+    utils.rate_limit.reset_rate_limits()
+
+
 def test_healthcheck(client):
     response = client.get("/api/")
     assert response.status_code == 200
@@ -55,6 +65,37 @@ def test_authenticate_returns_error(mock_authenticate):
     with app.app.test_client() as c:
         response = c.post("/api/authenticate", json={"user": "alice", "passHash": "wrong"})
     assert response.status_code == 400
+
+
+@mock.patch("app.auth.authenticate", return_value=({"error": "user not found"}, 400))
+def test_authenticate_rate_limited(mock_authenticate, client):
+    for _ in range(utils.rate_limit.REQUESTS_PER_WINDOW):
+        response = client.post("/api/authenticate", json={"user": "alice", "passHash": "abc123"})
+        assert response.status_code == 400
+    response = client.post("/api/authenticate", json={"user": "alice", "passHash": "abc123"})
+    assert response.status_code == 429
+    assert response.get_json() == {"error": "too many requests"}
+
+
+@mock.patch("app.user.create_user_with_token", return_value=({"error": "invalid invite token"}, 400))
+def test_create_user_rate_limited(mock_create, client):
+    payload = {"token": "invite123", "user": "alice", "passHash": "hash123"}
+    for _ in range(utils.rate_limit.REQUESTS_PER_WINDOW):
+        response = client.post("/api/create_user_from_invite_token", json=payload)
+        assert response.status_code == 400
+    response = client.post("/api/create_user_from_invite_token", json=payload)
+    assert response.status_code == 429
+    assert response.get_json() == {"error": "too many requests"}
+
+
+@mock.patch("app.auth.authenticate", return_value=({"error": "user not found"}, 400))
+def test_rate_limit_keys_are_per_endpoint(mock_authenticate, client):
+    for _ in range(utils.rate_limit.REQUESTS_PER_WINDOW):
+        response = client.post("/api/authenticate", json={"user": "alice", "passHash": "abc123"})
+        assert response.status_code == 400
+    response = client.post("/api/create_user_from_invite_token", json={"user": "alice"})
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "invalid request format"}
 
 
 def test_auth_check_no_token(client):
