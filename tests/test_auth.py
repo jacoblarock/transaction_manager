@@ -87,7 +87,7 @@ def test_authenticate_user_not_found(mock_db):
     mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
     mock_db.select.return_value = []
     result = auth.authenticate("ghost", "hash")
-    assert result == ("user not found", 400)
+    assert result == ({"error": "user not found"}, 400)
 
 
 @mock.patch("utils.auth.db")
@@ -100,7 +100,7 @@ def test_authenticate_password_match(mock_db):
     ]
     result = auth.authenticate("alice", "correct_hash")
     assert result[1] == 200
-    assert len(result[0]) == 100
+    assert len(result[0]["token"]) == 100
     mock_db.insert.assert_called_once()
     insert_args = mock_db.insert.call_args
     assert insert_args[0][1] == "sessions"
@@ -114,7 +114,7 @@ def test_authenticate_password_mismatch(mock_db):
         [{"u_pass": "db_hash"}],
     ]
     result = auth.authenticate("alice", "wrong_hash")
-    assert result == ("password does not match", 400)
+    assert result == ({"error": "password does not match"}, 400)
 
 
 @mock.patch("utils.auth.db")
@@ -122,4 +122,4 @@ def test_authenticate_multiple_users(mock_db):
     mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
     mock_db.select.return_value = [{"u_id": 1}, {"u_id": 2}]
     result = auth.authenticate("alice", "hash")
-    assert result == ("user not found", 400)
+    assert result == ({"error": "user not found"}, 400)

@@ -51,10 +51,17 @@ async function apiGet(endpoint, params = {}) {
         try { return JSON.parse(text); }
         catch { return text; }
     }
-    if (text.includes("session not found") || text.includes("invalid token")) {
+    let message = parseError(text);
+    if (message.includes("session not found") || message.includes("invalid token") || message.includes("no token provided")) {
         logout();
     }
-    throw new Error(text);
+    throw new Error(message);
+}
+
+// Extract the error message from an error response body (JSON {"error": "..."} or raw text)
+function parseError(text) {
+    try { return JSON.parse(text).error; }
+    catch { return text; }
 }
 
 // Check if user is logged in, redirect to login if not or session expired

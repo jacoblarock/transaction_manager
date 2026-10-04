@@ -22,7 +22,7 @@ def test_create_user_with_token_success(mock_db, mock_check_invite):
     mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
     mock_db.select.return_value = []
     result = user.create_user_with_token("valid_invite", "alice", "hash123")
-    assert result == ("success", 200)
+    assert result == ({"success": True}, 200)
     mock_db.insert.assert_called_once()
     insert_args = mock_db.insert.call_args
     assert insert_args[0][1] == "users"
@@ -37,7 +37,7 @@ def test_create_user_with_token_success(mock_db, mock_check_invite):
 def test_create_user_with_token_invalid_token(mock_db, mock_check_invite):
     mock_check_invite.return_value = -1
     result = user.create_user_with_token("bad_token", "alice", "hash123")
-    assert result == ("invalid invite token", 400)
+    assert result == ({"error": "invalid invite token"}, 400)
     mock_db.insert.assert_not_called()
 
 
@@ -48,7 +48,7 @@ def test_create_user_with_token_name_collision(mock_db, mock_check_invite):
     mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
     mock_db.select.return_value = [{"u_id": 1}, {"u_id": 2}]
     result = user.create_user_with_token("valid_invite", "alice", "hash123")
-    assert result == ("user with username already exists", 400)
+    assert result == ({"error": "user with username already exists"}, 400)
     mock_db.insert.assert_not_called()
 
 
@@ -59,7 +59,7 @@ def test_create_user_with_token_no_collision(mock_db, mock_check_invite):
     mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
     mock_db.select.return_value = []
     result = user.create_user_with_token("valid_invite", "alice", "hash123")
-    assert result == ("success", 200)
+    assert result == ({"success": True}, 200)
     update_args = mock_db.update.call_args
     assert update_args[0][1] == "invite_tokens"
     assert "it_expires" in update_args[0][2]
@@ -68,6 +68,7 @@ def test_create_user_with_token_no_collision(mock_db, mock_check_invite):
 @mock.patch("utils.user.check_auth")
 @mock.patch("utils.user.db")
 def test_get_user_id_found(mock_db, mock_check_auth):
+    mock_check_auth.return_value = 42
     mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
     mock_db.select.return_value = [{"u_id": 7}]
     result = user.get_user_id("token", "alice")
@@ -77,6 +78,7 @@ def test_get_user_id_found(mock_db, mock_check_auth):
 @mock.patch("utils.user.check_auth")
 @mock.patch("utils.user.db")
 def test_get_user_id_not_found(mock_db, mock_check_auth):
+    mock_check_auth.return_value = 42
     mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
     mock_db.select.return_value = []
     result = user.get_user_id("token", "nobody")
@@ -86,7 +88,17 @@ def test_get_user_id_not_found(mock_db, mock_check_auth):
 @mock.patch("utils.user.check_auth")
 @mock.patch("utils.user.db")
 def test_get_user_id_multiple(mock_db, mock_check_auth):
+    mock_check_auth.return_value = 42
     mock_db.connect.return_value.__enter__.return_value = mock.MagicMock()
     mock_db.select.return_value = [{"u_id": 1}, {"u_id": 2}]
     result = user.get_user_id("token", "dup")
     assert result == -1
+
+
+@mock.patch("utils.user.check_auth")
+@mock.patch("utils.user.db")
+def test_get_user_id_invalid_session(mock_db, mock_check_auth):
+    mock_check_auth.return_value = -1
+    result = user.get_user_id("token", "alice")
+    assert result == ({"error": "invalid token"}, 400)
+    mock_db.connect.assert_not_called()

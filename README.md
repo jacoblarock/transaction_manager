@@ -11,6 +11,11 @@ noted. Endpoints that require a session token expect it in an
 `Authorization: Bearer <session_token>` request header instead of a query
 parameter.
 
+All error responses use the same JSON body: `{"error": "<message>"}` with the
+message from the tables below. Endpoints that require a session token return
+`no token provided` when the header is missing and `invalid token` when the
+token does not match an active session.
+
 ### Healthcheck
 
 | | |
@@ -37,7 +42,7 @@ Content-Type: application/json
 
 | Status | Body |
 |--------|------|
-| 200 | Session token (string) |
+| 200 | `{"token": "<session_token>"}` |
 | 400 | `user not found` / `password does not match` / `invalid request format` |
 
 #### Auth Check
@@ -87,7 +92,7 @@ Content-Type: application/json
 
 | Status | Body |
 |--------|------|
-| 200 | `success` |
+| 200 | `{"success": true}` |
 | 400 | `invalid invite token` / `user with username already exists` / `invalid request format` |
 
 #### Get User ID

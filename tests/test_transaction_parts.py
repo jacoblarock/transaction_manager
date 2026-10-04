@@ -210,3 +210,21 @@ def test_get_transaction_parts_transaction_not_found(mock_db, mock_check_auth):
     result = transaction_parts.get_transaction_parts("token", 1)
     assert result == []
     assert mock_db.select.call_count == 1
+
+
+@mock.patch("utils.transaction_parts.check_auth")
+@mock.patch("utils.transaction_parts.db")
+def test_create_transaction_part_invalid_session(mock_db, mock_check_auth):
+    mock_check_auth.return_value = -1
+    result = transaction_parts.create_transaction_part("token", 1, 9, 20.00)
+    assert result == ({"error": "invalid token"}, 400)
+    mock_db.connect.assert_not_called()
+
+
+@mock.patch("utils.transaction_parts.check_auth")
+@mock.patch("utils.transaction_parts.db")
+def test_get_transaction_parts_invalid_session(mock_db, mock_check_auth):
+    mock_check_auth.return_value = -1
+    result = transaction_parts.get_transaction_parts("token", 1)
+    assert result == ({"error": "invalid token"}, 400)
+    mock_db.connect.assert_not_called()

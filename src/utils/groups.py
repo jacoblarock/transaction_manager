@@ -3,8 +3,11 @@ from utils.auth import check_auth
 from utils.logs import logger
 
 
-def get_groups(s_token: str) -> list[db.RealDictRow]:
+def get_groups(s_token: str) -> list[db.RealDictRow] | tuple[dict, int]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"get groups for user {u_id}")
     with db.connect() as conn:
         return db.select(
@@ -15,8 +18,11 @@ def get_groups(s_token: str) -> list[db.RealDictRow]:
         )
 
 
-def add_user_to_group(s_token: str, target_u_id: int, g_id: int) -> int:
+def add_user_to_group(s_token: str, target_u_id: int, g_id: int) -> int | tuple[dict, int]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"add user {target_u_id} to group {g_id} by user {u_id}")
     with db.connect() as conn:
         caller_row_count = db.select(
@@ -43,8 +49,11 @@ def add_user_to_group(s_token: str, target_u_id: int, g_id: int) -> int:
         return ugm_id
         
 
-def remove_user_from_group(s_token: str, target_u_id: int, g_id: int) -> int:
+def remove_user_from_group(s_token: str, target_u_id: int, g_id: int) -> int | tuple[dict, int]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"remove user {target_u_id} from group {g_id} by user {u_id}")
     with db.connect() as conn:
         caller_row_count = db.select(
@@ -69,8 +78,11 @@ def remove_user_from_group(s_token: str, target_u_id: int, g_id: int) -> int:
         )
 
 
-def create_group(s_token: str, g_name: str) -> int:
+def create_group(s_token: str, g_name: str) -> int | tuple[dict, int]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"create group user={u_id} name={g_name}")
     with db.connect() as conn:
         g_id = db.insert(
@@ -93,8 +105,11 @@ def create_group(s_token: str, g_name: str) -> int:
         return g_id
 
 
-def delete_group(s_token: str, g_id: int) -> bool:
+def delete_group(s_token: str, g_id: int) -> bool | tuple[dict, int]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"delete group user={u_id} group={g_id}")
     with db.connect() as conn:
         membership_count = db.select(
@@ -118,6 +133,9 @@ def delete_group(s_token: str, g_id: int) -> bool:
 
 def get_group_users(s_token: str, g_id: int) -> list[db.RealDictRow]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"get group users user={u_id} group={g_id}")
     with db.connect() as conn:
         membership_count = db.select(

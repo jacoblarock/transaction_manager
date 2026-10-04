@@ -108,7 +108,7 @@
                     document.getElementById("groupName").value = "";
                     loadGroups();
                 } else {
-                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(text)}</div>`;
+                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(parseError(text))}</div>`;
                 }
             } catch (err) {
                 alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(err.message)}</div>`;
@@ -125,7 +125,7 @@
                     document.getElementById("inviteToken").value = text;
                     new bootstrap.Modal(document.getElementById("inviteModal")).show();
                 } else {
-                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(text)}</div>`;
+                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(parseError(text))}</div>`;
                 }
             } catch (err) {
                 alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(err.message)}</div>`;

@@ -158,3 +158,21 @@ def test_get_payments_not_member(mock_db, mock_check_auth):
     result = payments.get_payments("token", 7)
     assert result == []
     assert mock_db.select.call_count == 1
+
+
+@mock.patch("utils.payments.check_auth")
+@mock.patch("utils.payments.db")
+def test_create_payment_invalid_session(mock_db, mock_check_auth):
+    mock_check_auth.return_value = -1
+    result = payments.create_payment("token", 7, 9, 25.00)
+    assert result == ({"error": "invalid token"}, 400)
+    mock_db.connect.assert_not_called()
+
+
+@mock.patch("utils.payments.check_auth")
+@mock.patch("utils.payments.db")
+def test_get_payments_invalid_session(mock_db, mock_check_auth):
+    mock_check_auth.return_value = -1
+    result = payments.get_payments("token", 7)
+    assert result == ({"error": "invalid token"}, 400)
+    mock_db.connect.assert_not_called()

@@ -176,3 +176,12 @@ def test_settle_balances_parts_with_payment(mock_db, mock_check_auth):
     assert result[0]["from"] == 2
     assert result[0]["to"] == 1
     assert result[0]["amount"] == 50.0
+
+
+@mock.patch("utils.settlement.check_auth")
+@mock.patch("utils.settlement.db")
+def test_settle_balances_invalid_session(mock_db, mock_check_auth):
+    mock_check_auth.return_value = -1
+    result = settlement.settle_balances("token", 7)
+    assert result == ({"error": "invalid token"}, 400)
+    mock_db.connect.assert_not_called()

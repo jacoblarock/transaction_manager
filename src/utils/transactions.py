@@ -9,8 +9,11 @@ def create_transaction(
     t_name: str,
     t_amount: float,
     t_date: str | None = None,
-) -> int:
+) -> int | tuple[dict, int]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"create transaction user={u_id} group={g_id} name={t_name} amount={t_amount} date={t_date}")
     with db.connect() as conn:
         membership_count = db.select(
@@ -39,8 +42,11 @@ def create_transaction(
 def delete_transaction(
     s_token: str,
     t_id: int,
-) -> bool:
+) -> bool | tuple[dict, int]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"delete transaction user={u_id} transaction={t_id}")
     with db.connect() as conn:
         transaction_rows = db.select(
@@ -75,8 +81,11 @@ def update_transaction(
     t_name: str,
     t_amount: float,
     t_date: str | None = None,
-) -> bool:
+) -> bool | tuple[dict, int]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"update transaction user={u_id} transaction={t_id} name={t_name} amount={t_amount} date={t_date}")
     with db.connect() as conn:
         transaction_rows = db.select(
@@ -109,6 +118,9 @@ def get_transactions(
     g_id: int,
 ) -> list[db.RealDictRow]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"get transactions user={u_id} group={g_id}")
     with db.connect() as conn:
         membership_count = db.select(

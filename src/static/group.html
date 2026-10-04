@@ -292,7 +292,7 @@
                     bootstrap.Modal.getInstance(document.getElementById("addTxnModal")).hide();
                     loadTimeline();
                 } else {
-                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(text)}</div>`;
+                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(parseError(text))}</div>`;
                 }
             } catch (err) {
                 alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(err.message)}</div>`;
@@ -325,7 +325,7 @@
                     bootstrap.Modal.getInstance(document.getElementById("addPayModal")).hide();
                     loadTimeline();
                 } else {
-                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(text)}</div>`;
+                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(parseError(text))}</div>`;
                 }
             } catch (err) {
                 alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(err.message)}</div>`;
@@ -357,7 +357,7 @@
                     bootstrap.Modal.getInstance(document.getElementById("editTxnModal")).hide();
                     loadTimeline();
                 } else {
-                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(text)}</div>`;
+                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(parseError(text))}</div>`;
                 }
             } catch (err) {
                 alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(err.message)}</div>`;
@@ -374,7 +374,7 @@
                     bootstrap.Modal.getInstance(document.getElementById("editTxnModal")).hide();
                     loadTimeline();
                 } else {
-                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(text)}</div>`;
+                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(parseError(text))}</div>`;
                 }
             } catch (err) {
                 alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(err.message)}</div>`;
@@ -404,7 +404,7 @@
                     bootstrap.Modal.getInstance(document.getElementById("editPayModal")).hide();
                     loadTimeline();
                 } else {
-                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(text)}</div>`;
+                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(parseError(text))}</div>`;
                 }
             } catch (err) {
                 alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(err.message)}</div>`;
@@ -421,7 +421,7 @@
                     bootstrap.Modal.getInstance(document.getElementById("editPayModal")).hide();
                     loadTimeline();
                 } else {
-                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(text)}</div>`;
+                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(parseError(text))}</div>`;
                 }
             } catch (err) {
                 alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(err.message)}</div>`;

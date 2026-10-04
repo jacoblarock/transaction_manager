@@ -9,8 +9,11 @@ def create_payment(
     recipient_u_id: int,
     p_amount: float,
     p_date: str | None = None,
-) -> int:
+) -> int | tuple[dict, int]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"create payment user={u_id} group={g_id} recipient={recipient_u_id} amount={p_amount} date={p_date}")
     with db.connect() as conn:
         membership_count = db.select(
@@ -39,8 +42,11 @@ def create_payment(
 def delete_payment(
     s_token: str,
     p_id: int,
-) -> bool:
+) -> bool | tuple[dict, int]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"delete payment user={u_id} payment={p_id}")
     with db.connect() as conn:
         payment_rows = db.select(
@@ -69,8 +75,11 @@ def update_payment(
     p_id: int,
     p_amount: float,
     p_date: str | None = None,
-) -> bool:
+) -> bool | tuple[dict, int]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"update payment user={u_id} payment={p_id} amount={p_amount} date={p_date}")
     with db.connect() as conn:
         payment_rows = db.select(
@@ -103,6 +112,9 @@ def get_payments(
     g_id: int,
 ) -> list[db.RealDictRow]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"get payments user={u_id} group={g_id}")
     with db.connect() as conn:
         membership_count = db.select(

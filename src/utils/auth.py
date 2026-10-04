@@ -43,7 +43,7 @@ def check_invite_token(it_token: str) -> int:
         return -1
 
 
-def authenticate(u_name: str, pass_hash: str) -> tuple[str,int]:
+def authenticate(u_name: str, pass_hash: str) -> tuple[dict,int]:
     with db.connect() as conn:
         u_id_rows = db.select(
             conn,
@@ -51,7 +51,7 @@ def authenticate(u_name: str, pass_hash: str) -> tuple[str,int]:
             (u_name,),
         )
         if len(u_id_rows) != 1:
-            return "user not found", 400
+            return {"error": "user not found"}, 400
         u_id = u_id_rows[0].get("u_id")
         logger.info(f"Attempting auth for user {u_name} id={u_id}")
         u_pass = db.select(
@@ -70,6 +70,6 @@ def authenticate(u_name: str, pass_hash: str) -> tuple[str,int]:
                 }],
                 primary_key="s_id",
             )
-            return s_token, 200
+            return {"token": s_token}, 200
         else:
-            return "password does not match", 400
+            return {"error": "password does not match"}, 400

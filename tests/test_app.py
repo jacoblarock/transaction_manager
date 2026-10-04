@@ -11,6 +11,12 @@ def client():
         yield c
 
 
+@pytest.fixture(autouse=True)
+def check_auth_mock():
+    with mock.patch("app.auth.check_auth", return_value=42) as m:
+        yield m
+
+
 def test_healthcheck(client):
     response = client.get("/api/")
     assert response.status_code == 200
@@ -19,6 +25,7 @@ def test_healthcheck(client):
 def test_authenticate_missing_user(client):
     response = client.post("/api/authenticate", json={"passHash": "abc123"})
     assert response.status_code == 400
+    assert response.get_json() == {"error": "invalid request format"}
 
 
 def test_authenticate_missing_passhash(client):
@@ -33,7 +40,7 @@ def test_authenticate_missing_all_params(client):
 
 @mock.patch("app.auth.authenticate")
 def test_authenticate_valid_params(mock_authenticate):
-    mock_authenticate.return_value = ("session_token_123", 200)
+    mock_authenticate.return_value = ({"token": "session_token_123"}, 200)
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.post("/api/authenticate", json={"user": "alice", "passHash": "abc123"})
@@ -43,7 +50,7 @@ def test_authenticate_valid_params(mock_authenticate):
 
 @mock.patch("app.auth.authenticate")
 def test_authenticate_returns_error(mock_authenticate):
-    mock_authenticate.return_value = ("password does not match", 400)
+    mock_authenticate.return_value = ({"error": "password does not match"}, 400)
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.post("/api/authenticate", json={"user": "alice", "passHash": "wrong"})
@@ -53,6 +60,7 @@ def test_authenticate_returns_error(mock_authenticate):
 def test_auth_check_no_token(client):
     response = client.get("/api/auth_check")
     assert response.status_code == 400
+    assert response.get_json() == {"error": "no token provided"}
 
 
 @mock.patch("app.auth.check_auth")
@@ -72,11 +80,13 @@ def test_auth_check_session_not_found(mock_check_auth):
     with app.app.test_client() as c:
         response = c.get("/api/auth_check", headers={"Authorization": "Bearer invalid_token"})
     assert response.status_code == 400
+    assert response.get_json() == {"error": "session not found"}
 
 
 def test_create_invite_token_no_token(client):
     response = client.get("/api/create_invite_token")
     assert response.status_code == 400
+    assert response.get_json() == {"error": "no token provided"}
 
 
 @mock.patch("app.auth.check_auth")
@@ -84,6 +94,7 @@ def test_create_invite_token_invalid_session(mock_check_auth, client):
     mock_check_auth.return_value = -1
     response = client.get("/api/create_invite_token", headers={"Authorization": "Bearer bad"})
     assert response.status_code == 400
+    assert response.get_json() == {"error": "invalid token"}
 
 
 @mock.patch("app.user.create_invite_token")
@@ -134,7 +145,7 @@ def test_create_user_partial_params(client):
 
 @mock.patch("app.user.create_user_with_token")
 def test_create_user_valid_params(mock_create):
-    mock_create.return_value = ("success", 200)
+    mock_create.return_value = ({"success": True}, 200)
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.post(
@@ -147,7 +158,7 @@ def test_create_user_valid_params(mock_create):
 
 @mock.patch("app.user.create_user_with_token")
 def test_create_user_invalid_token(mock_create):
-    mock_create.return_value = ("invalid invite token", 400)
+    mock_create.return_value = ({"error": "invalid invite token"}, 400)
     app.app.config["TESTING"] = True
     with app.app.test_client() as c:
         response = c.post(
@@ -160,6 +171,7 @@ def test_create_user_invalid_token(mock_create):
 def test_get_groups_no_token(client):
     response = client.get("/api/get_groups")
     assert response.status_code == 400
+    assert response.get_json() == {"error": "no token provided"}
 
 
 @mock.patch("app.groups.get_groups")
@@ -195,6 +207,7 @@ def test_delete_group_missing_params(client):
 def test_delete_group_invalid_id(client):
     response = client.get("/api/delete_group?groupId=abc", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 400
+    assert response.get_json() == {"error": "invalid group id"}
 
 
 @mock.patch("app.groups.delete_group")
@@ -214,6 +227,7 @@ def test_delete_group_not_member(mock_delete_group):
     with app.app.test_client() as c:
         response = c.get("/api/delete_group?groupId=42", headers={"Authorization": "Bearer valid"})
     assert response.status_code == 403
+    assert response.get_json() == {"error": "user not in group"}
 
 
 @mock.patch("app.auth.check_auth")
@@ -230,6 +244,7 @@ def test_add_user_to_group_invalid_token(mock_check_auth, client):
         "/api/add_user_to_group?userId=1&groupId=2", headers={"Authorization": "Bearer bad"}
     )
     assert response.status_code == 400
+    assert response.get_json() == {"error": "invalid token"}
 
 
 @mock.patch("app.auth.check_auth")

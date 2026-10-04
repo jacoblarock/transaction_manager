@@ -179,3 +179,21 @@ def test_get_group_users_not_member(mock_db, mock_check_auth):
     result = groups.get_group_users("token", 7)
     assert result == []
     assert mock_db.select.call_count == 1
+
+
+@mock.patch("utils.groups.check_auth")
+@mock.patch("utils.groups.db")
+def test_get_groups_invalid_session(mock_db, mock_check_auth):
+    mock_check_auth.return_value = -1
+    result = groups.get_groups("token")
+    assert result == ({"error": "invalid token"}, 400)
+    mock_db.connect.assert_not_called()
+
+
+@mock.patch("utils.groups.check_auth")
+@mock.patch("utils.groups.db")
+def test_delete_group_invalid_session(mock_db, mock_check_auth):
+    mock_check_auth.return_value = -1
+    result = groups.delete_group("token", 7)
+    assert result == ({"error": "invalid token"}, 400)
+    mock_db.connect.assert_not_called()

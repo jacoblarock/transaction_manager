@@ -60,7 +60,8 @@
                     alertBox.innerHTML = `<div class="alert alert-success">Account created! Redirecting to login...</div>`;
                     setTimeout(() => window.location.href = "/static/login.html", 2000);
                 } else {
-                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(text)}</div>`;
+                    let message = parseError(text);
+                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(message)}</div>`;
                 }
             } catch (err) {
                 alertBox.innerHTML = `<div class="alert alert-danger">An error occurred: ${escapeHtml(err.message)}</div>`;

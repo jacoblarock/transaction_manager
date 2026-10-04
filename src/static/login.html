@@ -52,11 +52,12 @@
                 });
                 const text = await resp.text();
                 if (resp.ok) {
-                    setToken(text);
+                    setToken(JSON.parse(text).token);
                     setUsername(username);
                     window.location.href = "/static/groups.html";
                 } else {
-                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(text)}</div>`;
+                    let message = parseError(text);
+                    alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(message)}</div>`;
                 }
             } catch (err) {
                 alertBox.innerHTML = `<div class="alert alert-danger">An error occurred: ${escapeHtml(err.message)}</div>`;

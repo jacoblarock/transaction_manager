@@ -8,8 +8,11 @@ def create_transaction_part(
     t_id: int,
     target_u_id: int,
     tp_amount: float,
-) -> int:
+) -> int | tuple[dict, int]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"create transaction part user={u_id} transaction={t_id} target={target_u_id} amount={tp_amount}")
     with db.connect() as conn:
         transaction_rows = db.select(
@@ -49,8 +52,11 @@ def create_transaction_part(
 def delete_transaction_part(
     s_token: str,
     tp_id: int,
-) -> bool:
+) -> bool | tuple[dict, int]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"delete transaction part user={u_id} part={tp_id}")
     with db.connect() as conn:
         part_rows = db.select(
@@ -86,8 +92,11 @@ def update_transaction_part(
     tp_id: int,
     target_u_id: int,
     tp_amount: float,
-) -> int | bool:
+) -> int | bool | tuple[dict, int]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"update transaction part user={u_id} part={tp_id} target={target_u_id} amount={tp_amount}")
     with db.connect() as conn:
         part_rows = db.select(
@@ -132,6 +141,9 @@ def get_transaction_parts(
     t_id: int,
 ) -> list[db.RealDictRow]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"get transaction parts user={u_id} transaction={t_id}")
     with db.connect() as conn:
         transaction_rows = db.select(

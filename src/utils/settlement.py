@@ -3,8 +3,11 @@ from utils.auth import check_auth
 from utils.logs import logger
 
 
-def settle_balances(s_token: str, g_id: int) -> list[dict]:
+def settle_balances(s_token: str, g_id: int) -> list[dict] | tuple[dict, int]:
     u_id = check_auth(s_token)
+    if u_id <= 0:
+        logger.error("invalid session token")
+        return {"error": "invalid token"}, 400
     logger.info(f"settle balances user={u_id} group={g_id}")
     with db.connect() as conn:
         membership_count = db.select(
