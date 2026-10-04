@@ -66,10 +66,10 @@ def test_insert_single_row(mock_execute_values):
     assert result == [1]
     mock_execute_values.assert_called_once()
     query = mock_execute_values.call_args[0][1]
-    assert "INSERT INTO users" in query
+    assert "insert into users" in query
     assert "u_name" in query
     assert "u_pass" in query
-    assert "RETURNING u_id" in query
+    assert "returning u_id" in query
 
 
 @mock.patch("utils.db.execute_values")
@@ -104,9 +104,9 @@ def test_update_single_row(mock_execute_batch):
     assert result == 1
     mock_execute_batch.assert_called_once()
     query = mock_execute_batch.call_args[0][1]
-    assert "UPDATE users" in query
-    assert "SET" in query
-    assert "WHERE" in query
+    assert "update users" in query
+    assert "set" in query
+    assert "where" in query
     assert "u_pass = %s" in query
     assert "u_id = %s" in query
 
@@ -138,7 +138,7 @@ def test_delete_single_row(mock_execute_batch):
     assert result == 1
     mock_execute_batch.assert_called_once()
     query = mock_execute_batch.call_args[0][1]
-    assert "DELETE FROM sessions" in query
+    assert "delete from sessions" in query
     assert "s_token = %s" in query
 
 

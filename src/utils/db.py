@@ -40,9 +40,9 @@ def insert(
         return []
     cols = list(rows[0].keys())
     query = (
-        f"INSERT INTO {table_name} ({', '.join(cols)}) "
-        f"VALUES %s "
-        f"RETURNING {primary_key}"
+        f"insert into {table_name} ({', '.join(cols)}) "
+        f"values %s "
+        f"returning {primary_key}"
     )
     values = [tuple(row[col] for col in cols) for row in rows]
     with conn.cursor() as cur:
@@ -55,8 +55,8 @@ def update(conn: PgConnection, table_name: str, to_update: dict, where: list[dic
         return 0
     set_clause = ", ".join(f"{col} = %s" for col in to_update)
     where_cols = list(where[0].keys())
-    where_clause = " AND ".join(f"{col} = %s" for col in where_cols)
-    query = f"UPDATE {table_name} SET {set_clause} WHERE {where_clause}"
+    where_clause = " and ".join(f"{col} = %s" for col in where_cols)
+    query = f"update {table_name} set {set_clause} where {where_clause}"
     set_values = [to_update[col] for col in to_update]
     values = [tuple(set_values + [row[col] for col in where_cols]) for row in where]
     with conn.cursor() as cur:
@@ -68,8 +68,8 @@ def delete(conn: PgConnection, table_name: str, rows: list[dict]) -> int:
     if not rows:
         return 0
     cols = list(rows[0].keys())
-    where_clause = " AND ".join(f"{col} = %s" for col in cols)
-    query = f"DELETE FROM {table_name} WHERE {where_clause}"
+    where_clause = " and ".join(f"{col} = %s" for col in cols)
+    query = f"delete from {table_name} where {where_clause}"
     values = [tuple(row[col] for col in cols) for row in rows]
     with conn.cursor() as cur:
         execute_batch(cur, query, values)

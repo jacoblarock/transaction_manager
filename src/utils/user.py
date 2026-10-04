@@ -29,9 +29,10 @@ def create_user_with_token(it_token: str, u_name: str, pass_hash: str) -> tuple[
     with db.connect() as conn:
         name_collision_rows = db.select(
             conn,
-            f"select u_id from users where u_name = '{u_name}';"
+            "select u_id from users where u_name = %s;",
+            (u_name,),
         )
-        if len(name_collision_rows) > 1:
+        if len(name_collision_rows) > 0:
             logger.error("user already exists")
             return {"error": "user with username already exists"}, 400
         logger.info("updating invite token")
@@ -63,7 +64,8 @@ def get_user_id(s_token: str, u_name: str) -> int | tuple[dict, int]:
     with db.connect() as conn:
         rows = db.select(
             conn,
-            f"select u_id from users where u_name = '{u_name}';"
+            "select u_id from users where u_name = %s;",
+            (u_name,),
         )
         if len(rows) != 1:
             return -1
